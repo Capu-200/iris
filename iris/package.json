@@ -1,0 +1,33 @@
+{
+  "name": "iris",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@heroui/button": "^2.2.26",
+    "@heroui/system": "^2.4.22",
+    "@heroui/theme": "^2.4.22",
+    "framer-motion": "^12.23.12",
+    "next": "15.5.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.3",
+    "heroui-cli": "^1.2.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
