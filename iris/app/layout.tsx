@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+
 import { CartProvider } from "./lib/cart";
-import Header from "./components/Header";
+import HeaderCopy from "./components/HeaderCopy";
+
 import * as React from "react";
 import {HeroUIProvider} from "@heroui/react";
 // import {Providers} from "./providers";
@@ -34,7 +36,7 @@ export default function RootLayout({
 			>
 				{/* <Providers> */}
 					<CartProvider>
-						<Header />
+						<HeaderCopy />
 						{children}
 					</CartProvider>
 				{/* </Providers> */}

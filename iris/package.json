@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.2.0",
     "@heroui/button": "^2.2.26",
     "@heroui/react": "^2.8.4",

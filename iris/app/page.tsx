@@ -44,7 +44,7 @@ export default function Home() {
         </div>
       </section> */}
 
-      <section className="pb-32">
+      <section className="py-32">
         <div className="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
             <div className="mr-auto place-self-center lg:col-span-7">
                 <h1 className="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl text-gray-950">Collection Rentrée 2025</h1>
@@ -56,7 +56,7 @@ export default function Home() {
             <div className="hidden lg:mt-0 lg:col-span-5 lg:flex">
               {/* <Image src='https://img.heroui.chat/image/fashion?w=600&h=600&u=15' width={400} height={400} alt='Logo en forme de fleur'/> */}
               <img 
-                src="https://img.heroui.chat/image/fashion?w=600&h=600&u=15" 
+                src="https://www.julesetmargot.fr/wp-content/uploads/2024/02/Veja-Sahara_4.jpg" 
                 alt="Summer collection" 
                 className="h-[400px] w-auto mt-8 md:mt-0 rounded-lg shadow-xl"
               />

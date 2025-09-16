@@ -8,7 +8,7 @@ import Image from 'next/image';
 export default function Header() {
 	const { totalItems } = useCart();
 	return (
-		<header className="w-full border-b bg-gray-50 border-black/10 dark:border-white/10">
+		<header className="w-full bg-gray-50">
 			<div className="mx-auto px-4 py-4 flex items-center justify-between">
 				<Link href="/" className="text-xl font-semibold flex items-center gap-2 text-[#576F66]">
 				<Image className='w-5' src={Logo} alt="Logo en forme de fleur"/>
