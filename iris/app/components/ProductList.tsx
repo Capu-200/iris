@@ -1,39 +1,39 @@
 const products = [
     {
       id: 1,
-      name: 'Basic Tee',
-      href: '#',
-      imageSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-01.jpg',
-      imageAlt: "Front of men's Basic Tee in black.",
-      price: '$35',
-      color: 'Black',
+      name: 'V-90 Leather White Cyprus',
+      href: '',
+      imageSrc: 'https://media.veja-store.com/images/t_sfcc-pdp-desktop-v2/f_auto/v1756413464/VEJA/PACKSHOTS/VD2003384_5/veja-baskets-v-90-cuir-biologique-blanc-vd2003384_5.jpg',
+      imageAlt: "Chaussures Veja",
+      price: '165€',
+      color: 'Vert',
     },
     {
       id: 2,
-      name: 'Basic Tee',
-      href: '#',
-      imageSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-02.jpg',
-      imageAlt: "Front of men's Basic Tee in white.",
-      price: '$35',
-      color: 'Aspen White',
+      name: 'Panenka suede grenat sun bark',
+      href: '',
+      imageSrc: 'https://media.veja-store.com/images/t_sfcc-pdp-desktop-v2/f_auto/v1739229225/VEJA/PACKSHOTS/FU0320897_2/veja-baskets-panenka-suede-rouge-fu0320897_2.jpg',
+      imageAlt: "Chaussures Veja.",
+      price: '140€',
+      color: 'Grenat',
     },
     {
       id: 3,
-      name: 'Basic Tee',
-      href: '#',
-      imageSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-03.jpg',
-      imageAlt: "Front of men's Basic Tee in dark gray.",
-      price: '$35',
-      color: 'Charcoal',
+      name: 'GEN8 - Smiley x MoEa Nature Drop',
+      href: '',
+      imageSrc: 'https://moea.io/cdn/shop/files/Gen8_20smiley-profil.jpg?v=1740566551&width=1600',
+      imageAlt: "Chaussures MoEa.",
+      price: '185€',
+      color: 'Beige',
     },
     {
       id: 4,
-      name: 'Artwork Tee',
-      href: '#',
-      imageSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-04.jpg',
-      imageAlt: "Front of men's Artwork Tee in peach with white and brown dots forming an isometric cube.",
-      price: '$35',
-      color: 'Iso Dots',
+      name: 'GEN9 - Corn White & Black Grained',
+      href: '',
+      imageSrc: 'https://moea.io/cdn/shop/files/Plan_20de_20travail_2012-min.png?v=1743755687&width=1400',
+      imageAlt: "Chaussures MoEa.",
+      price: '139€',
+      color: 'Blanc & noir',
     },
   ]
   
@@ -41,7 +41,7 @@ const products = [
     return (
       <div className="bg-gray-50">
         <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900">Customers also purchased</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900">Nos clients adorent</h2>
   
           <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
             {products.map((product) => (
