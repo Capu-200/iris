@@ -5,9 +5,9 @@ import { getFeaturedProducts } from "./lib/products";
 import {Button, ButtonGroup} from "@heroui/button";
 import { ChevronRightIcon } from "@heroicons/react/16/solid";
 
-
-
 import Collections from "@/app/components/Collections";
+import ProductList from "./components/ProductList";
+import Features from "./components/Features";
 import { Footer } from "./components/Footer";
 
 export default function Home() {
@@ -65,6 +65,8 @@ export default function Home() {
       </section>
 
       <Collections/>
+      <ProductList/>
+      <Features/>
       <Footer/>
 
 		</main>
