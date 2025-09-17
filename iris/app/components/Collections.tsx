@@ -1,6 +1,6 @@
 const callouts = [
     {
-      name: 'Veja',
+      name: 'Veja 2025',
       description: 'Collection Automne-Hiver 2025',
       imageSrc: 'https://media.veja-store.com/image/upload/f_auto/t_sfcc-banner-lb-desktop-hd/v1/VEJA/ECOM/LOOKBOOKS/AW25/LOOKBOOK%20MAINLINE%20AW25/DESKTOP/1_8',
       imageAlt: 'Chaussures Veja.',
@@ -14,7 +14,7 @@ const callouts = [
       href: '#',
     },
     {
-      name: 'Veja',
+      name: 'Veja 2024',
       description: 'Running automne-hiver 2024',
       imageSrc: 'https://media.veja-store.com/image/upload/f_auto/c_crop,h_4091,w_4910,y_1296/q_auto/v1/VEJA/2024/AW/LOOKBOOK/10_RUNNING%20LANZAROTE/VEJA_CONDOR_3_LANZAROTE_AW24_20',
       imageAlt: 'Chaussures Veja.',
