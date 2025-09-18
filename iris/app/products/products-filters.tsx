@@ -83,7 +83,7 @@ export default function ProductsFilters({
 						{hasActiveFilters && (
 							<button
 								onClick={clearAllFilters}
-								className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+								className="text-sm text-[#576F66] hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
 							>
 								Réinitialiser
 							</button>
@@ -96,7 +96,7 @@ export default function ProductsFilters({
 							Trier par
 						</label>
 						<select 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 							value={sort} 
 							onChange={(e) => update('sort', e.target.value)}
 						>
@@ -114,7 +114,7 @@ export default function ProductsFilters({
 							Marque
 						</label>
 						<select 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 							value={brand} 
 							onChange={(e) => update('brand', e.target.value)}
 						>
@@ -131,7 +131,7 @@ export default function ProductsFilters({
 							Catégorie
 						</label>
 						<select 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 							value={category} 
 							onChange={(e) => update('category', e.target.value)}
 						>
@@ -148,7 +148,7 @@ export default function ProductsFilters({
 							Pointure
 						</label>
 						<input 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 							type="number" 
 							placeholder="Ex: 42" 
 							value={size} 
@@ -164,7 +164,7 @@ export default function ProductsFilters({
 						<div className="grid grid-cols-2 gap-3">
 							<div>
 								<input 
-									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 									type="number" 
 									placeholder="Min" 
 									value={min} 
@@ -173,7 +173,7 @@ export default function ProductsFilters({
 							</div>
 							<div>
 								<input 
-									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 									type="number" 
 									placeholder="Max" 
 									value={max} 

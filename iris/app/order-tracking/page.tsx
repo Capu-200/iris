@@ -84,7 +84,7 @@ export default function OrderTrackingPage() {
       case 'Livrée':
         return 'text-green-600 dark:text-green-400';
       case 'Expédiée':
-        return 'text-blue-600 dark:text-blue-400';
+        return 'text-[#576F66] dark:text-blue-400';
       case 'En préparation':
         return 'text-yellow-600 dark:text-yellow-400';
       case 'Confirmée':
@@ -121,7 +121,7 @@ export default function OrderTrackingPage() {
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 pt-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Suivi de commande
           </h1>
@@ -142,7 +142,7 @@ export default function OrderTrackingPage() {
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
                 placeholder="Ex: CMD-ABC123XYZ"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent"
                 required
               />
             </div>
@@ -358,7 +358,7 @@ export default function OrderTrackingPage() {
             {/* Informations de contact */}
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
               <div className="flex items-start">
-                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 mt-1 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-[#576F66] dark:text-blue-400 mt-1 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>

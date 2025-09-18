@@ -44,12 +44,13 @@ export async function GET(request: NextRequest) {
       const itemsData = await orderItemsResponse.json();
       orderItems = itemsData.records.map((item: any) => ({
         id: item.id,
-        productId: item.fields['Produit ID']?.[0] || '',
+        productName: item.fields['Nom du produit'] || 'Produit inconnu',
         quantity: item.fields['Quantite'] || 0,
         size: item.fields['Taille'] || null,
         unitPrice: item.fields['Prix unitaire'] || 0,
         totalPrice: item.fields['Prix total'] || 0,
-        status: item.fields['Statut'] || 'En stock'
+        status: item.fields['Statut'] || 'En stock',
+        image: item.fields['Image'] || null
       }));
     }
 
@@ -175,9 +176,9 @@ export async function GET(request: NextRequest) {
       paymentMethod: orderFields['Methode de paiement'] || '',
       subtotal: orderFields['Sous-total'] || 0,
       shippingCost: orderFields['Frais de livraison'] || 0,
-      discount: orderFields['Reduction appliquee'] || 0,
-      total: orderFields['Total final'] || 0,
-      promoCode: orderFields['Code promotionnel'] || '',
+      discount: orderFields['Reduction'] || 0,
+      total: orderFields['Total'] || 0,
+      promoCode: orderFields['Code promo'] || '',
       items: orderItems,
       client: clientInfo,
       trackingSteps
