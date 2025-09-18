@@ -21,7 +21,7 @@ export default function RSE() {
                 </div>
             </div>
 
-            <section className="bg-gray-50">
+            <section className="bg-gray-50 pb-10">
                 <div className="py-8 px-4 mx-auto max-w-screen-xl sm:py-16 lg:px-6">
                     <div className="max-w-screen-md mb-8 lg:mb-16">
                         <h2 className="mb-4 text-4xl tracking-tight font-extrabold text-gray-900">Responsabilité Sociétale des Entreprises</h2>
@@ -32,49 +32,49 @@ export default function RSE() {
                             <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#D6DDDA] lg:h-12 lg:w-12">
                                 <GlobeAmericasIcon className='stroke-[#576F66] w-8'></GlobeAmericasIcon>
                             </div>
-                            <h3 className="mb-2 text-xl font-bold dark:text-white">Économie Circulaire</h3>
-                            <p className="text-gray-500 dark:text-gray-400">Plan it, create it, launch it. Collaborate seamlessly with all  the organization and hit your marketing goals every month with our marketing plan.</p>
+                            <h3 className="mb-2 text-xl font-bold text-gray-950">Économie Circulaire</h3>
+                            <p className="text-gray-500">Nous prolongeons la durée de vie des sneakers en favorisant leur revente plutôt que leur mise au rebut, réduisant ainsi l'impact environnemental de la fast fashion.</p>
                         </div>
                         <div>
                             <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#D6DDDA] lg:h-12 lg:w-12">
                                 <SunIcon className='stroke-[#576F66] w-8'/>                            
                             </div>
-                            <h3 className="mb-2 text-xl font-bold dark:text-white">Legal</h3>
-                            <p className="text-gray-500 dark:text-gray-400">Protect your organization, devices and stay compliant with our structured workflows and custom permissions made for you.</p>
+                            <h3 className="mb-2 text-xl font-bold text-gray-950">Empreinte Carbone Réduite</h3>
+                            <p className="text-gray-500">Chaque paire vendue évite la production d'une nouvelle sneaker, économisant en moyenne 14kg de CO2 et 7000L d'eau par paire.</p>
                         </div>
                         <div>
                             <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#D6DDDA] lg:h-12 lg:w-12">
                                 <TrophyIcon className='stroke-[#576F66] w-8'/>
                             </div>
-                            <h3 className="mb-2 text-xl font-bold dark:text-white">Business Automation</h3>
-                            <p className="text-gray-500 dark:text-gray-400">Auto-assign tasks, send Slack messages, and much more. Now power up with hundreds of new templates to help you get started.</p>
+                            <h3 className="mb-2 text-xl font-bold text-gray-950">Authentification Rigoureuse</h3>
+                            <p className="text-gray-500">Notre processus d'authentification en 12 points garantit l'authenticité et la qualité, luttant contre la contrefaçon et protégeant les consommateurs.</p>
                         </div>
                         <div>
-                            <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#D6DDDA] lg:h-12 lg:w-12">
-                                <UserGroupIcon className='stroke-[#576F66] w-8'></UserGroupIcon>
+                            <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#F5EDE3] lg:h-12 lg:w-12">
+                                <UserGroupIcon className='stroke-[#CCA372] w-8'></UserGroupIcon>
                             </div>
-                            <h3 className="mb-2 text-xl font-bold dark:text-white">Finance</h3>
-                            <p className="text-gray-500 dark:text-gray-400">Audit-proof software built for critical financial operations like month-end close and quarterly budgeting.</p>
+                            <h3 className="mb-2 text-xl font-bold text-gray-950">Inclusion & Accessibilité</h3>
+                            <p className="text-gray-500">Nous démocratisons l'accès aux sneakers premium en proposant des prix justes et en créant des opportunités pour tous.</p>
                         </div>
                         <div>
-                            <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#D6DDDA] lg:h-12 lg:w-12">
-                                <HeartIcon className='stroke-[#576F66] w-8'></HeartIcon>
+                            <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#F5EDE3] lg:h-12 lg:w-12">
+                                <HeartIcon className='stroke-[#CCA372] w-8'></HeartIcon>
                             </div>
-                            <h3 className="mb-2 text-xl font-bold dark:text-white">Enterprise Design</h3>
-                            <p className="text-gray-500 dark:text-gray-400">Craft beautiful, delightful experiences for both marketing and product with real cross-company collaboration.</p>
+                            <h3 className="mb-2 text-xl font-bold text-gray-950">Impact Social</h3>
+                            <p className="text-gray-500">5% de nos bénéfices sont reversés à des associations œuvrant pour l'insertion professionnelle des jeunes en difficulté.</p>
                         </div>
                         <div>
-                            <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#D6DDDA] lg:h-12 lg:w-12">
-                                <GlobeAltIcon className='stroke-[#576F66] w-8'></GlobeAltIcon>
+                            <div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-[#F5EDE3] lg:h-12 lg:w-12">
+                                <GlobeAltIcon className='stroke-[#CCA372] w-8'></GlobeAltIcon>
                             </div>
-                            <h3 className="mb-2 text-xl font-bold dark:text-white">Operations</h3>
-                            <p className="text-gray-500 dark:text-gray-400">Keep your company’s lights on with customizable, iterative, and structured workflows built for all efficient teams and individual.</p>
+                            <h3 className="mb-2 text-xl font-bold text-gray-950">Commerce Équitable</h3>
+                            <p className="text-gray-500">Nous garantissons une rémunération juste pour nos vendeurs avec des frais transparents et des paiements rapides.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section className="bg-gray-50">
+            <section className="bg-gray-100">
                 <div className="max-w-screen-xl px-4 py-8 mx-auto text-center lg:py-16 lg:px-6">
                     <h1 className='text-4xl md:text-5xl font-bold mb-6 pb-10 text-gray-950'>Notre impact en chiffres</h1>
                     <dl className="grid max-w-screen-md gap-8 mx-auto text-gray-900 sm:grid-cols-4">
