@@ -25,10 +25,8 @@ export default function CheckoutPage() {
 		email: '',
 		phone: '',
 		
-		// Adresse de livraison (champs séparés)
-		street: '',
-		city: '',
-		postalCode: '',
+		// Adresse de livraison (adresse complète avec ville et CP)
+		address: '',
 		country: 'France',
 		
 		// Méthode de paiement
@@ -39,9 +37,6 @@ export default function CheckoutPage() {
 		cardName: '',
 	});
 
-	// États de validation
-	const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
-
 	// Calculer le total final
 	const finalTotal = totalPrice + shippingCost - promoDiscount;
 
@@ -51,115 +46,8 @@ export default function CheckoutPage() {
 		setShippingCost(cost);
 	}, [formData.country, totalPrice]);
 
-	// Fonctions de validation
-	const validateEmail = (email: string): boolean => {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return emailRegex.test(email);
-	};
-
-	const validatePhone = (phone: string): boolean => {
-		const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
-		return phoneRegex.test(phone);
-	};
-
-	const validateCardNumber = (cardNumber: string): boolean => {
-		const cleanNumber = cardNumber.replace(/\s/g, '');
-		return /^\d{13,19}$/.test(cleanNumber);
-	};
-
-	const validateExpiryDate = (expiryDate: string): boolean => {
-		const regex = /^(0[1-9]|1[0-2])\/\d{2}$/;
-		if (!regex.test(expiryDate)) return false;
-		
-		const [month, year] = expiryDate.split('/');
-		const now = new Date();
-		const currentYear = now.getFullYear() % 100;
-		const currentMonth = now.getMonth() + 1;
-		
-		const expYear = parseInt(year);
-		const expMonth = parseInt(month);
-		
-		return expYear > currentYear || (expYear === currentYear && expMonth >= currentMonth);
-	};
-
-	const validateCVV = (cvv: string): boolean => {
-		return /^\d{3,4}$/.test(cvv);
-	};
-
-	const validatePostalCode = (postalCode: string, country: string): boolean => {
-		switch (country) {
-			case 'France':
-				return /^\d{5}$/.test(postalCode);
-			case 'Belgique':
-				return /^\d{4}$/.test(postalCode);
-			case 'Suisse':
-				return /^\d{4}$/.test(postalCode);
-			default:
-				return postalCode.length >= 3;
-		}
-	};
-
-	const validateStep = (step: number): boolean => {
-		const errors: {[key: string]: string} = {};
-
-		if (step === 1) {
-			if (!formData.firstName.trim()) errors.firstName = 'Le prénom est obligatoire';
-			if (!formData.lastName.trim()) errors.lastName = 'Le nom est obligatoire';
-			if (!formData.email.trim()) {
-				errors.email = 'L\'email est obligatoire';
-			} else if (!validateEmail(formData.email)) {
-				errors.email = 'Format d\'email invalide';
-			}
-			if (formData.phone && !validatePhone(formData.phone)) {
-				errors.phone = 'Format de téléphone invalide';
-			}
-		}
-
-		if (step === 2) {
-			if (!formData.street.trim()) errors.street = 'La rue est obligatoire';
-			if (!formData.city.trim()) errors.city = 'La ville est obligatoire';
-			if (!formData.postalCode.trim()) {
-				errors.postalCode = 'Le code postal est obligatoire';
-			} else if (!validatePostalCode(formData.postalCode, formData.country)) {
-				errors.postalCode = 'Format de code postal invalide pour ce pays';
-			}
-			if (!formData.country) errors.country = 'Le pays est obligatoire';
-		}
-
-		if (step === 3) {
-			if (!formData.cardName.trim()) errors.cardName = 'Le nom sur la carte est obligatoire';
-			if (!formData.cardNumber.trim()) {
-				errors.cardNumber = 'Le numéro de carte est obligatoire';
-			} else if (!validateCardNumber(formData.cardNumber)) {
-				errors.cardNumber = 'Format de carte invalide';
-			}
-			if (!formData.expiryDate.trim()) {
-				errors.expiryDate = 'La date d\'expiration est obligatoire';
-			} else if (!validateExpiryDate(formData.expiryDate)) {
-				errors.expiryDate = 'Date d\'expiration invalide ou expirée';
-			}
-			if (!formData.cvv.trim()) {
-				errors.cvv = 'Le CVV est obligatoire';
-			} else if (!validateCVV(formData.cvv)) {
-				errors.cvv = 'Format de CVV invalide';
-			}
-		}
-
-		setFormErrors(errors);
-		return Object.keys(errors).length === 0;
-	};
-
 	const handleInputChange = (field: string, value: string) => {
 		setFormData(prev => ({ ...prev, [field]: value }));
-		
-		// Effacer l'erreur du champ modifié
-		if (formErrors[field]) {
-			setFormErrors(prev => {
-				const newErrors = { ...prev };
-				delete newErrors[field];
-				return newErrors;
-			});
-		}
 	};
 
 	const handlePromoCodeSubmit = async (e: React.FormEvent) => {
@@ -183,13 +71,6 @@ export default function CheckoutPage() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		
-		// Valider toutes les étapes
-		if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
-			alert('Veuillez corriger les erreurs dans le formulaire');
-			return;
-		}
-
 		setIsProcessing(true);
 
 		try {
@@ -211,9 +92,7 @@ export default function CheckoutPage() {
 					price: item.price,
 				})),
 				shippingAddress: {
-					street: formData.street,
-					city: formData.city,
-					postalCode: formData.postalCode,
+					address: formData.address, // Adresse complète avec ville et CP
 					country: formData.country,
 				},
 				promoCode: promoCode || undefined,
@@ -227,6 +106,7 @@ export default function CheckoutPage() {
 			clear();
 			router.push(`/order-confirmation?orderId=${orderId}&orderNumber=${orderNumber}`);
 		} catch (error: any) {
+			console.error('Error creating order:', error);
 			alert('Erreur lors de la création de la commande: ' + error.message);
 		} finally {
 			setIsProcessing(false);
@@ -331,13 +211,8 @@ export default function CheckoutPage() {
 											required
 											value={formData.firstName}
 											onChange={(e) => handleInputChange('firstName', e.target.value)}
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										/>
-										{formErrors.firstName && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.firstName}</p>
-										)}
 									</div>
 									<div>
 										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -348,13 +223,8 @@ export default function CheckoutPage() {
 											required
 											value={formData.lastName}
 											onChange={(e) => handleInputChange('lastName', e.target.value)}
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										/>
-										{formErrors.lastName && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.lastName}</p>
-										)}
 									</div>
 									<div>
 										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -365,13 +235,8 @@ export default function CheckoutPage() {
 											required
 											value={formData.email}
 											onChange={(e) => handleInputChange('email', e.target.value)}
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										/>
-										{formErrors.email && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
-										)}
 									</div>
 									<div>
 										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -381,13 +246,8 @@ export default function CheckoutPage() {
 											type="tel"
 											value={formData.phone}
 											onChange={(e) => handleInputChange('phone', e.target.value)}
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										/>
-										{formErrors.phone && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
-										)}
 									</div>
 								</div>
 							</div>
@@ -402,59 +262,16 @@ export default function CheckoutPage() {
 								<div className="space-y-4">
 									<div>
 										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-											Rue et numéro *
+											Adresse complète *
 										</label>
-										<input
-											type="text"
+										<textarea
 											required
-											value={formData.street}
-											onChange={(e) => handleInputChange('street', e.target.value)}
-											placeholder="123 Rue de la Paix"
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.street ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											value={formData.address}
+											onChange={(e) => handleInputChange('address', e.target.value)}
+											placeholder="Rue, numéro, ville, code postal"
+											rows={3}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										/>
-										{formErrors.street && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.street}</p>
-										)}
-									</div>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-										<div>
-											<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-												Ville *
-											</label>
-											<input
-												type="text"
-												required
-												value={formData.city}
-												onChange={(e) => handleInputChange('city', e.target.value)}
-												placeholder="Paris"
-												className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-													formErrors.city ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-												}`}
-											/>
-											{formErrors.city && (
-												<p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
-											)}
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-												Code postal *
-											</label>
-											<input
-												type="text"
-												required
-												value={formData.postalCode}
-												onChange={(e) => handleInputChange('postalCode', e.target.value)}
-												placeholder="75001"
-												className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-													formErrors.postalCode ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-												}`}
-											/>
-											{formErrors.postalCode && (
-												<p className="text-red-500 text-sm mt-1">{formErrors.postalCode}</p>
-											)}
-										</div>
 									</div>
 									<div>
 										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -463,18 +280,13 @@ export default function CheckoutPage() {
 										<select
 											value={formData.country}
 											onChange={(e) => handleInputChange('country', e.target.value)}
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.country ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										>
 											<option value="France">France</option>
 											<option value="Belgique">Belgique</option>
 											<option value="Suisse">Suisse</option>
 											<option value="Autre">Autre</option>
 										</select>
-										{formErrors.country && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.country}</p>
-										)}
 									</div>
 									{/* Affichage des frais de livraison */}
 									<div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -505,13 +317,8 @@ export default function CheckoutPage() {
 											required
 											value={formData.cardName}
 											onChange={(e) => handleInputChange('cardName', e.target.value)}
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.cardName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										/>
-										{formErrors.cardName && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.cardName}</p>
-										)}
 									</div>
 									<div>
 										<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -523,13 +330,8 @@ export default function CheckoutPage() {
 											placeholder="1234 5678 9012 3456"
 											value={formData.cardNumber}
 											onChange={(e) => handleInputChange('cardNumber', e.target.value)}
-											className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-												formErrors.cardNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-											}`}
+											className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										/>
-										{formErrors.cardNumber && (
-											<p className="text-red-500 text-sm mt-1">{formErrors.cardNumber}</p>
-										)}
 									</div>
 									<div className="grid grid-cols-2 gap-4">
 										<div>
@@ -542,13 +344,8 @@ export default function CheckoutPage() {
 												placeholder="MM/AA"
 												value={formData.expiryDate}
 												onChange={(e) => handleInputChange('expiryDate', e.target.value)}
-												className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-													formErrors.expiryDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-												}`}
+												className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 											/>
-											{formErrors.expiryDate && (
-												<p className="text-red-500 text-sm mt-1">{formErrors.expiryDate}</p>
-											)}
 										</div>
 										<div>
 											<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -560,13 +357,8 @@ export default function CheckoutPage() {
 												placeholder="123"
 												value={formData.cvv}
 												onChange={(e) => handleInputChange('cvv', e.target.value)}
-												className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-													formErrors.cvv ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-												}`}
+												className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 											/>
-											{formErrors.cvv && (
-												<p className="text-red-500 text-sm mt-1">{formErrors.cvv}</p>
-											)}
 										</div>
 									</div>
 								</div>
@@ -590,7 +382,7 @@ export default function CheckoutPage() {
 									<div>
 										<h3 className="font-medium text-gray-900 dark:text-white mb-2">Adresse de livraison</h3>
 										<p className="text-sm text-gray-600 dark:text-gray-400">
-											{formData.street}, {formData.postalCode} {formData.city}, {formData.country}
+											{formData.address}, {formData.country}
 										</p>
 									</div>
 									<div>
@@ -618,11 +410,7 @@ export default function CheckoutPage() {
 							{currentStep < 4 ? (
 								<button
 									type="button"
-									onClick={() => {
-										if (validateStep(currentStep)) {
-											setCurrentStep(currentStep + 1);
-										}
-									}}
+									onClick={() => setCurrentStep(currentStep + 1)}
 									className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
 								>
 									Suivant

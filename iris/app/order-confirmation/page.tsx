@@ -2,15 +2,19 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function OrderConfirmationPage() {
+	const searchParams = useSearchParams();
 	const [orderNumber, setOrderNumber] = useState('');
+	const [orderId, setOrderId] = useState('');
 
 	useEffect(() => {
-		// Générer un numéro de commande aléatoire
-		const orderNum = 'CMD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+		const orderNum = searchParams.get('orderNumber') || 'CMD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+		const orderIdParam = searchParams.get('orderId') || '';
 		setOrderNumber(orderNum);
-	}, []);
+		setOrderId(orderIdParam);
+	}, [searchParams]);
 
 	return (
 		<main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
