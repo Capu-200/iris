@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const { firstName, lastName, email, password, phone } = await request.json();
-    console.log(' Inscription pour:', email);
     
     const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID;
     const API_KEY = process.env.AIRTABLE_API_KEY;
@@ -21,7 +20,6 @@ export async function POST(request: NextRequest) {
     if (existingResponse.ok) {
       const existingData = await existingResponse.json();
       if (existingData.records.length > 0) {
-        console.log('❌ Email déjà utilisé');
         return NextResponse.json({ success: false, error: "Cet email est déjà utilisé" }, { status: 400 });
       }
     }
@@ -41,7 +39,6 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    console.log('🔍 Création du client:', clientRecord);
 
     const response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients`, {
       method: 'POST',
@@ -52,7 +49,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(clientRecord)
     });
 
-    console.log('🔍 Statut création client:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -61,7 +57,6 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await response.json();
-    console.log('✅ Client créé:', result);
 
     const user = {
       id: result.id,
