@@ -1,15 +1,17 @@
 import Logo from '@/public/Logo-vert.svg'
 import Image from 'next/image';
 import { Footer } from '../components/Footer';
+import Features from '../components/Features';
+import Newsletter from '../components/Newsletter';
 
 import { GlobeAmericasIcon, SunIcon, TrophyIcon, UserGroupIcon, HeartIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 
 export default function RSE() {
     return(
         <div className="pt-16 bg-gray-100">
-            <div className="bg-gradient-hero text-primary-foreground">
-                <div className="container mx-auto px-4 py-16">
-                <div className="max-w-4xl mx-auto text-center text-gray-950">
+            <div className="bg-[#D6DDDA]">
+                <div className="container mx-auto px-4 py-20">
+                <div className="max-w-4xl mx-auto text-center text-[#34433D]">
                     <h1 className="text-4xl md:text-5xl font-bold mb-6">
                         Nos Démarches RSE & ESS
                     </h1>
@@ -21,10 +23,12 @@ export default function RSE() {
                 </div>
             </div>
 
+            <Features></Features>
+
             <section className="bg-gray-50 pb-10">
                 <div className="py-8 px-4 mx-auto max-w-screen-xl sm:py-16 lg:px-6">
                     <div className="max-w-screen-md mb-8 lg:mb-16">
-                        <h2 className="mb-4 text-4xl tracking-tight font-extrabold text-gray-900">Responsabilité Sociétale des Entreprises</h2>
+                        <h2 className="mb-4 text-4xl tracking-tight font-extrabold text-gray-900">Responsabilité Sociétale de l'entreprise</h2>
                         <p className="text-gray-500 sm:text-xl">Notre engagement environnemental et social est au cœur de notre modèle économique. Des valeurs humaines et solidaires guident chacune de nos actions.</p>
                     </div>
                     <div className="space-y-8 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-12 md:space-y-0">
@@ -74,6 +78,7 @@ export default function RSE() {
                 </div>
             </section>
 
+            
             <section className="bg-gray-100">
                 <div className="max-w-screen-xl px-4 py-8 mx-auto text-center lg:py-16 lg:px-6">
                     <h1 className='text-4xl md:text-5xl font-bold mb-6 pb-10 text-gray-950'>Notre impact en chiffres</h1>
@@ -97,6 +102,8 @@ export default function RSE() {
                     </dl>
                 </div>
             </section>
+
+            <Newsletter/>
             <Footer/>
         </div>
     )
