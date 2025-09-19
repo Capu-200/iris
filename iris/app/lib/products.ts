@@ -19,7 +19,7 @@ export type Product = {
 export type ProductFilter = {
 	query?: string;
 	brands?: string[];
-	size?: number;
+	size?: number | number[]; // Modifier pour accepter un tableau
 	priceMin?: number;
 	priceMax?: number;
 	category?: string;
@@ -212,7 +212,18 @@ function filterProducts(products: Product[], filter: ProductFilter): Product[] {
 			if (!p.title.toLowerCase().includes(q) && !p.brand.toLowerCase().includes(q)) return false;
 		}
 		if (brands && brands.length > 0 && !brands.includes(p.brand)) return false;
-		if (typeof size === "number" && !p.sizesAvailable.includes(size)) return false;
+		
+		// Gestion des tailles multiples
+		if (size !== undefined) {
+			if (Array.isArray(size)) {
+				// Si c'est un tableau, vérifier qu'au moins une taille est disponible
+				if (size.length > 0 && !size.some(s => p.sizesAvailable.includes(s))) return false;
+			} else {
+				// Si c'est un nombre, vérifier que la taille est disponible
+				if (!p.sizesAvailable.includes(size)) return false;
+			}
+		}
+		
 		if (typeof priceMin === "number" && p.price < priceMin) return false;
 		if (typeof priceMax === "number" && p.price > priceMax) return false;
 		if (category && p.category.toLowerCase() !== category.toLowerCase()) return false;

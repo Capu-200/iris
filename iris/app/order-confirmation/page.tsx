@@ -20,7 +20,7 @@ export default function OrderConfirmationPage() {
 		<main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
 			<div className="max-w-4xl mx-auto px-4 py-12">
 				{/* Confirmation de commande */}
-				<div className="text-center mb-12">
+				<div className="text-center mb-12 pt-12">
 					<div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-6">
 						<svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -45,7 +45,7 @@ export default function OrderConfirmationPage() {
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 						<div className="text-center">
 							<div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
-								<svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<svg className="w-6 h-6 text-[#576F66] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 								</svg>
 							</div>
@@ -104,7 +104,7 @@ export default function OrderConfirmationPage() {
 							</p>
 							<Link 
 								href="/order-tracking"
-								className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+								className="inline-flex items-center text-sm text-[#576F66] hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
 							>
 								Suivre ma commande
 								<svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

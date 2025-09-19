@@ -44,6 +44,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 			return action.payload;
 		case 'ADD_ITEM': {
 			const { product, quantity = 1, size } = action.payload;
+			// Utiliser l'ID Airtable comme productId pour les liaisons
 			const existingIndex = state.items.findIndex(
 				(i) => i.productId === product.id && i.size === size,
 			);
@@ -59,8 +60,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 				items: [
 					...state.items,
 					{
-						productId: product.id,
-						title: product.title,
+						productId: product.id, // ID Airtable pour les liaisons
+						title: product.title, // Titre pour l'affichage
 						price: product.price,
 						image: product.images[0],
 						size,

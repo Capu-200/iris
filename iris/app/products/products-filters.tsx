@@ -6,7 +6,7 @@ import { useState } from 'react';
 interface CurrentFilters {
 	brand?: string;
 	category?: string;
-	size?: number;
+	size?: number | number[]; // Changer de 'size' à 'size' mais accepter un tableau
 	priceMin?: number;
 	priceMax?: number;
 	sort?: string;
@@ -29,10 +29,14 @@ export default function ProductsFilters({
 
 	const brand = searchParams.get('brand') ?? '';
 	const category = searchParams.get('category') ?? '';
-	const size = searchParams.get('size') ?? '';
+	const sizeParam = searchParams.get('size') ?? '';
+	const sizes = sizeParam ? sizeParam.split(',').map(s => parseInt(s)).filter(s => !isNaN(s)) : [];
 	const min = searchParams.get('min') ?? '';
 	const max = searchParams.get('max') ?? '';
 	const sort = searchParams.get('sort') ?? 'newest';
+
+	// Tailles disponibles communes
+	const availableSizes = [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48];
 
 	function update(param: string, value: string) {
 		const next = new URLSearchParams(searchParams.toString());
@@ -43,11 +47,33 @@ export default function ProductsFilters({
 		router.replace(`${pathname}?${next.toString()}`);
 	}
 
+	function toggleSize(size: number) {
+		const next = new URLSearchParams(searchParams.toString());
+		const currentSizes = sizes;
+		
+		if (currentSizes.includes(size)) {
+			// Retirer la taille
+			const newSizes = currentSizes.filter(s => s !== size);
+			if (newSizes.length > 0) {
+				next.set('size', newSizes.join(','));
+			} else {
+				next.delete('size');
+			}
+		} else {
+			// Ajouter la taille
+			const newSizes = [...currentSizes, size].sort((a, b) => a - b);
+			next.set('size', newSizes.join(','));
+		}
+		
+		next.delete('page');
+		router.replace(`${pathname}?${next.toString()}`);
+	}
+
 	function clearAllFilters() {
 		router.replace(pathname);
 	}
 
-	const hasActiveFilters = brand || category || size || min || max;
+	const hasActiveFilters = brand || category || sizes.length > 0 || min || max;
 
 	return (
 		<>
@@ -58,7 +84,7 @@ export default function ProductsFilters({
 					className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm"
 				>
 					<span className="font-medium text-gray-900 dark:text-white">
-						Filtres {hasActiveFilters && `(${[brand, category, size, min, max].filter(Boolean).length})`}
+						Filtres {hasActiveFilters && `(${[brand, category, sizes.length > 0 ? 'tailles' : '', min, max].filter(Boolean).length})`}
 					</span>
 					<svg 
 						className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
@@ -83,7 +109,7 @@ export default function ProductsFilters({
 						{hasActiveFilters && (
 							<button
 								onClick={clearAllFilters}
-								className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+								className="text-sm text-[#576F66] hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
 							>
 								Réinitialiser
 							</button>
@@ -96,7 +122,7 @@ export default function ProductsFilters({
 							Trier par
 						</label>
 						<select 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 							value={sort} 
 							onChange={(e) => update('sort', e.target.value)}
 						>
@@ -114,7 +140,7 @@ export default function ProductsFilters({
 							Marque
 						</label>
 						<select 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 							value={brand} 
 							onChange={(e) => update('brand', e.target.value)}
 						>
@@ -131,7 +157,7 @@ export default function ProductsFilters({
 							Catégorie
 						</label>
 						<select 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 							value={category} 
 							onChange={(e) => update('category', e.target.value)}
 						>
@@ -142,18 +168,31 @@ export default function ProductsFilters({
 						</select>
 					</div>
 
-					{/* Pointure */}
+					{/* Pointures - Boutons multiples */}
 					<div>
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Pointure
+							Pointures
 						</label>
-						<input 
-							className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-							type="number" 
-							placeholder="Ex: 42" 
-							value={size} 
-							onChange={(e) => update('size', e.target.value)} 
-						/>
+						<div className="grid grid-cols-4 gap-2">
+							{availableSizes.map((size) => (
+								<button
+									key={size}
+									onClick={() => toggleSize(size)}
+									className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+										sizes.includes(size)
+											? 'bg-[#576F66] text-white border-[#576F66]'
+											: 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+									}`}
+								>
+									{size}
+								</button>
+							))}
+						</div>
+						{sizes.length > 0 && (
+							<p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+								{sizes.length} taille{sizes.length > 1 ? 's' : ''} sélectionnée{sizes.length > 1 ? 's' : ''}
+							</p>
+						)}
 					</div>
 
 					{/* Prix */}
@@ -164,7 +203,7 @@ export default function ProductsFilters({
 						<div className="grid grid-cols-2 gap-3">
 							<div>
 								<input 
-									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 									type="number" 
 									placeholder="Min" 
 									value={min} 
@@ -173,7 +212,7 @@ export default function ProductsFilters({
 							</div>
 							<div>
 								<input 
-									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+									className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent" 
 									type="number" 
 									placeholder="Max" 
 									value={max} 
@@ -204,9 +243,9 @@ export default function ProductsFilters({
 										</button>
 									</span>
 								)}
-								{size && (
+								{sizes.length > 0 && (
 									<span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-										Taille: {size}
+										Tailles: {sizes.join(', ')}
 										<button onClick={() => update('size', '')} className="ml-1 hover:text-yellow-600">
 											×
 										</button>

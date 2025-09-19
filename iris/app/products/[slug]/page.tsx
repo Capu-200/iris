@@ -189,7 +189,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
 								<h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Caractéristiques</h3>
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 									<div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
-										<div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{product.sizesAvailable.length}</div>
+										<div className="text-2xl font-bold text-[#576F66] dark:text-blue-400">{product.sizesAvailable.length}</div>
 										<div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Tailles disponibles</div>
 									</div>
 									<div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
