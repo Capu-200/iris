@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useAuth } from '../lib/auth';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface OrderItem {
   id: string;
@@ -53,10 +56,33 @@ interface OrderTrackingInfo {
 }
 
 export default function OrderTrackingPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [orderNumber, setOrderNumber] = useState('');
   const [trackingInfo, setTrackingInfo] = useState<OrderTrackingInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/order-tracking');
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#576F66] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const handleTrackOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +158,14 @@ export default function OrderTrackingPage() {
           <p className="text-lg text-gray-600 dark:text-gray-300">
             Consultez le statut de votre commande en temps réel
           </p>
+          <div className="mt-4">
+            <Link 
+              href="/account"
+              className="text-[#576F66] hover:text-[#34433D] font-medium"
+            >
+              ← Retour à mon compte
+            </Link>
+          </div>
         </div>
 
         {/* Formulaire de recherche */}
