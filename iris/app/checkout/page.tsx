@@ -252,7 +252,9 @@ export default function CheckoutPage() {
 			const orderData = {
 				clientId,
 				items: state.items.map(item => ({
-					productId: item.productId,
+					productId: item.productId, // ID Airtable
+					title: item.title, // Titre du produit
+					image: item.image, // Image du produit
 					quantity: item.quantity,
 					size: item.size,
 					price: item.price,

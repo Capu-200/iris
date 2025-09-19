@@ -5,12 +5,16 @@ import Image from 'next/image';
 
 interface OrderItem {
   id: string;
-  productId: string;
+  productId: string | string[];
+  productName: string;
   quantity: number;
   size: number | null;
   unitPrice: number;
   totalPrice: number;
   status: string;
+  brand: string;
+  image: string | null;
+  currentPrice: number;
 }
 
 interface TrackingStep {
@@ -203,15 +207,25 @@ export default function OrderTrackingPage() {
                   <div className="space-y-4">
                     {trackingInfo.items.map((item, index) => (
                       <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
-                          <span className="text-xs text-gray-500">IMG</span>
+                        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt={item.productName}
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs text-gray-500">IMG</span>
+                          )}
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            Produit #{item.productId}
+                            {item.productName}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Taille {item.size || 'N/A'} • Quantité {item.quantity}
+                          {item.brand} • Taille {item.size || 'N/A'} • Quantité {item.quantity}
                           </p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             Statut: {item.status}

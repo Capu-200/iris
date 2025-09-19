@@ -2,17 +2,17 @@
 export interface AirtableRecord {
   id: string;
   fields: {
-    'Modèle': string;
-    'Marque': string;
-    'Catégorie': string;
-    'Prix': string; // Format: "165.00 EUR"
-    'Tailles disponibles': string; // Format: "38;39;40;41;42"
-    'Images': string; // Format: "url1;url2;url3"
-    'Stock': number;
-    'Origine fabrication': string;
-    'Intro': string;
-    'Matériaux': string;
-    'Description': string;
+    'Modèle'?: string;
+    'Marque'?: string;
+    'Catégorie'?: string;
+    'Prix'?: string; // Format: "165.00 EUR"
+    'Tailles disponibles'?: string; // Format: "38;39;40;41;42"
+    'Images'?: string; // Format: "url1;url2;url3"
+    'Stock'?: number;
+    'Origine fabrication'?: string;
+    'Intro'?: string;
+    'Matériaux'?: string;
+    'Description'?: string;
   };
   createdTime: string;
 }
@@ -32,13 +32,19 @@ if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) {
 }
 
 // Fonction pour parser le prix depuis le format "165.00 EUR"
-function parsePrice(priceString: string): number {
+function parsePrice(priceString?: string): number {
+  if (!priceString || typeof priceString !== 'string') {
+    return 0;
+  }
   const match = priceString.match(/(\d+\.?\d*)/);
   return match ? parseFloat(match[1]) : 0;
 }
 
 // Fonction pour parser les tailles depuis le format "38;39;40;41;42"
-function parseSizes(sizesString: string): number[] {
+function parseSizes(sizesString?: string): number[] {
+  if (!sizesString || typeof sizesString !== 'string') {
+    return [];
+  }
   return sizesString
     .split(';')
     .map(size => parseInt(size.trim()))
@@ -47,7 +53,10 @@ function parseSizes(sizesString: string): number[] {
 }
 
 // Fonction pour parser les images depuis le format "url1;url2;url3"
-function parseImages(imagesString: string): string[] {
+function parseImages(imagesString?: string): string[] {
+  if (!imagesString || typeof imagesString !== 'string') {
+    return [];
+  }
   return imagesString
     .split(';')
     .map(url => url.trim())
@@ -55,13 +64,24 @@ function parseImages(imagesString: string): string[] {
 }
 
 // Fonction pour créer un slug à partir du modèle
-function createSlug(model: string): string {
+function createSlug(model?: string): string {
+  if (!model || typeof model !== 'string') {
+    return 'produit-sans-nom';
+  }
   return model
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
+}
+
+// Fonction pour obtenir une valeur de champ sécurisée
+function getFieldValue<T>(field: T | undefined, defaultValue: T, fieldName: string): T {
+  if (field === undefined || field === null) {
+    return defaultValue;
+  }
+  return field;
 }
 
 // Fonction pour récupérer tous les produits depuis Airtable
@@ -75,8 +95,6 @@ export async function fetchProductsFromAirtable(): Promise<any[]> {
     // Encoder le nom de la table pour l'URL
     const encodedTableName = encodeURIComponent(AIRTABLE_TABLE_NAME);
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodedTableName}`;
-    
-    console.log('Tentative de connexion à Airtable:', url);
     
     const response = await fetch(url, {
       headers: {
@@ -93,23 +111,26 @@ export async function fetchProductsFromAirtable(): Promise<any[]> {
 
     const data: AirtableResponse = await response.json();
     
-    // Transformer les données Airtable en format Product
-    return data.records.map(record => ({
-      id: record.id,
-      slug: createSlug(record.fields['Modèle']),
-      title: record.fields['Modèle'],
-      brand: record.fields['Marque'],
-      category: record.fields['Catégorie'],
-      price: parsePrice(record.fields['Prix']),
-      sizesAvailable: parseSizes(record.fields['Tailles disponibles']),
-      images: parseImages(record.fields['Images']),
-      stock: record.fields['Stock'],
-      manufacturingOrigin: record.fields['Origine fabrication'],
-      intro: record.fields['Intro'],
-      materials: record.fields['Matériaux'],
-      description: record.fields['Description'],
-      featured: false, // Vous pouvez ajouter une colonne "Featured" dans Airtable si nécessaire
-    }));
+    // Transformer les données Airtable en format Product avec vérifications de sécurité
+    return data.records.map(record => {
+      const fields = record.fields;
+      
+      return {
+        id: record.id,
+        slug: createSlug(fields['Modèle']),
+        title: getFieldValue(fields['Modèle'], 'Produit sans nom', 'Modèle'),
+        brand: getFieldValue(fields['Marque'], 'Marque inconnue', 'Marque'),
+        category: getFieldValue(fields['Catégorie'], 'Non classé', 'Catégorie'),
+        price: parsePrice(fields['Prix']),
+        sizesAvailable: parseSizes(fields['Tailles disponibles']),
+        images: parseImages(fields['Images']),
+        stock: getFieldValue(fields['Stock'], 0, 'Stock'),
+        manufacturingOrigin: getFieldValue(fields['Origine fabrication'], 'Non spécifiée', 'Origine fabrication'),
+        intro: getFieldValue(fields['Intro'], '', 'Intro') || 'Découvrez cette paire de chaussures qui allie style et confort pour accompagner vos journées. Conçue avec soin, elle s\'adapte à tous vos moments, que ce soit pour une sortie décontractée ou un usage quotidien.',
+        materials: getFieldValue(fields['Matériaux'], '', 'Matériaux'),
+        description: getFieldValue(fields['Description'], '', 'Description'),
+      };
+    });
   } catch (error) {
     console.error('Erreur lors de la récupération des données Airtable:', error);
     return [];
@@ -138,7 +159,7 @@ export async function fetchCategoriesFromAirtable(): Promise<string[]> {
 export async function searchProductsFromAirtable(filters: {
   query?: string;
   brands?: string[];
-  size?: number;
+  size?: number | number[]; // Modifier pour accepter un tableau
   priceMin?: number;
   priceMax?: number;
   category?: string;
@@ -157,9 +178,22 @@ export async function searchProductsFromAirtable(filters: {
     if (brands && brands.length > 0 && !brands.includes(product.brand)) {
       return false;
     }
-    if (typeof size === "number" && !product.sizesAvailable.includes(size)) {
-      return false;
+    
+    // Gestion des tailles multiples
+    if (size !== undefined) {
+      if (Array.isArray(size)) {
+        // Si c'est un tableau, vérifier qu'au moins une taille est disponible
+        if (size.length > 0 && !size.some(s => product.sizesAvailable.includes(s))) {
+          return false;
+        }
+      } else {
+        // Si c'est un nombre, vérifier que la taille est disponible
+        if (!product.sizesAvailable.includes(size)) {
+          return false;
+        }
+      }
     }
+    
     if (typeof priceMin === "number" && product.price < priceMin) {
       return false;
     }
