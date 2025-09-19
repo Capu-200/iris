@@ -30,7 +30,7 @@ export interface OrderData {
 }
 
 // Appliquer un code promotionnel
-export async function applyPromoCode(code: string, subtotal: number): Promise<number> {
+export async function applyPromoCode(code: string, subtotal: number): Promise<{discount: number, type: string}> {
   try {
     const response = await fetch('/api/promo-codes', {
       method: 'POST',
@@ -44,7 +44,7 @@ export async function applyPromoCode(code: string, subtotal: number): Promise<nu
     }
 
     const data = await response.json();
-    return data.discount || 0;
+    return { discount: data.discount || 0, type: data.type || 'fixed' };
   } catch (error: any) {
     throw error;
   }
@@ -100,7 +100,7 @@ export async function createOrder(orderData: OrderData): Promise<{
 }
 
 // Calculer les frais de livraison
-export function calculateShippingCost(country: string, subtotal: number = 0): number {
+export function calculateShippingCost(country: string, subtotal: number = 0, isFreeShipping: boolean = false): number {
   const SHIPPING_RATES: { [key: string]: number } = {
     'France': 9.99,
     'Belgique': 12.99,
@@ -108,6 +108,7 @@ export function calculateShippingCost(country: string, subtotal: number = 0): nu
     'Autre': 19.99
   };
 
+  if (isFreeShipping) return 0;
   if (country === 'France' && subtotal >= 125) return 0;
   return SHIPPING_RATES[country] || SHIPPING_RATES['Autre'];
 }

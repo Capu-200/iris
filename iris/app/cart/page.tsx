@@ -35,7 +35,7 @@ export default function CartPage() {
 		<main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
 			<div className="max-w-7xl mx-auto px-4 py-12">
 				{/* Header */}
-				<div className="mb-8">
+				<div className="mb-8 pt-12">
 					<h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
 						Mon Panier
 					</h1>
@@ -49,7 +49,7 @@ export default function CartPage() {
 					<div className="text-center py-16">
 						<div className="max-w-md mx-auto">
 							<svg className="mx-auto h-24 w-24 text-gray-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+								<path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
 							</svg>
 
 							<h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -101,7 +101,7 @@ export default function CartPage() {
 													href={`/products/${item.slug}`}
 													className="block group"
 												>
-													<h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+													<h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#576F66] dark:group-hover:text-blue-400 transition-colors line-clamp-2">
 														{item.title}
 													</h3>
 												</Link>
@@ -165,7 +165,7 @@ export default function CartPage() {
 							<div className="flex justify-between items-center pt-4">
 								<Link 
 									href="/products"
-									className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+									className="text-sm text-[#576F66] hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
 								>
 									← Continuer mes achats
 								</Link>
@@ -200,7 +200,7 @@ export default function CartPage() {
 									</div>
 
 									{shippingCost > 0 && (
-										<div className="text-sm text-blue-600 dark:text-blue-400">
+										<div className="text-sm text-[#576F66] dark:text-blue-400">
 											Ajoutez {(75 - totalPrice).toFixed(2)} € pour la livraison gratuite
 										</div>
 									)}
@@ -227,17 +227,17 @@ export default function CartPage() {
 										<svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
 										</svg>
+										<span>Livraison gratuite</span>
+									</div>
+									<div className="flex items-center gap-2">
+										<svg className="w-5 h-5 text-[#576F66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+										</svg>
 										<span>Paiement sécurisé</span>
 									</div>
 									<div className="flex items-center gap-2">
-										<svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-										</svg>
-										<span>Livraison rapide</span>
-									</div>
-									<div className="flex items-center gap-2">
-										<svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+										<svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
 										</svg>
 										<span>Retours gratuits</span>
 									</div>

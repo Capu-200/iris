@@ -6,37 +6,16 @@ import Image from "next/image";
 import Logo from '@/public/Logo-vert.svg' 
 
 import { useCart } from '../lib/cart';
+import { useAuth } from '../lib/auth';
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogPanel } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon, SparklesIcon, ArrowPathIcon, CloudArrowUpIcon, LockClosedIcon, UserCircleIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 
 export default function HeaderCopy() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
-    const [userName, setUserName] = useState('')
-
-	const { totalItems } = useCart();
-
-    useEffect(() => {
-        // Vérifier si l'utilisateur est connecté
-        const token = localStorage.getItem('authToken')
-        const name = localStorage.getItem('userName')
-        const email = localStorage.getItem('userEmail')
-        
-        if (token) {
-            setIsLoggedIn(true)
-            setUserName(name || email || 'Utilisateur')
-        }
-    }, [])
-
-    // Fonction de déconnexion
-    const handleLogout = () => {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('userName');
-        window.location.href = '/';
-    }
+    const { user, logout } = useAuth();
+    const { totalItems } = useCart();
 
     return(
         <header className="absolute inset-x-0 top-0 z-50 bg-gray-50">
@@ -58,48 +37,38 @@ export default function HeaderCopy() {
                 </button>
               </div>
               <div className="hidden lg:flex lg:gap-x-12">
-
-				{/* Insérer Searchbar */}
-				{/* <div className="relative">
-					<input
-						className="w-fit px-12 py-1.5 text-base border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm"
-						placeholder="Rechercher des sneakers..."
-					/>
-
-					<svg className="absolute left-4 top-1/2 transform -translate-y-1/2 h-[18px] w-[18px] text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-					</svg>
-				</div> */}
-                
                 </div>
                 <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-12">
+
 					<a href='/products' className="text-sm/6 font-semibold text-gray-900">
 						Catalogue
 					</a>
 
-                    {isLoggedIn ? (
+
+                    {user ? (
                         <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
+                            <Link href="/account" className="flex items-center space-x-2">
                                 <UserCircleIcon className="h-5 w-5 text-purple-600" />
                                 <span className="text-sm/6 font-semibold text-gray-900">
-                                    {userName}
+                                    {user.firstName}
                                 </span>
-                            </div>
-                            <button
-                                onClick={handleLogout}
+                            </Link>
+                            <Link
+                                href="/"
+                                onClick={logout}
                                 className="text-sm/4 ml-4 mr-2 font-semibold text-orange-500 hover:text-orange-600 transition"
                             >
                                 Se déconnecter
-                            </button>
+                            </Link>
                         </div>
                     ) : (
-                        <a href="/login" className="text-sm/6 font-semibold text-gray-900">
+                        <Link href="/login" className="text-sm/6 font-semibold text-gray-900">
                             Se connecter
-                        </a>
+                        </Link>
                     )}
-					<a href='/cart' className="text-sm/6 font-semibold text-gray-900">
+					<Link href='/cart' className="text-sm/6 font-semibold text-gray-900">
 						Panier ({totalItems})
-					</a>
+					</Link>
                 </div>
             </nav>
             <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen} className="lg:hidden">
@@ -126,32 +95,33 @@ export default function HeaderCopy() {
 								Catalogue
 							</a>
 							<a href='/cart' className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50">
+
 								Panier ({totalItems})
-							</a>
+							</Link>
 							</div>
 							<div className="py-6">
-								{isLoggedIn ? (
+								{user ? (
 									<>
-										<div className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900">
+										<Link href="/account" className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900">
 											<div className="flex items-center space-x-2">
 												<UserCircleIcon className="h-5 w-5 text-purple-600" />
-												<span>{userName}</span>
+												<span>{user.firstName}</span>
 											</div>
-										</div>
+										</Link>
 										<button
-											onClick={handleLogout}
+											onClick={logout}
 											className="mt-2 w-full px-3 py-2 rounded bg-gray-200 text-gray-800 text-base font-medium hover:bg-gray-300 transition"
 										>
 											Se déconnecter
 										</button>
 									</>
 								) : (
-									<a
+									<Link
 										href="/login"
 										className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50"
 									>
 										Se connecter
-									</a>
+									</Link>
 								)}
 							</div>
                         </div>

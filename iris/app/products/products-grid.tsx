@@ -53,7 +53,7 @@ function Pagination({ currentPage, totalPages }: { currentPage: number; totalPag
 					href={`?page=${page}`}
 					className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
 						page === currentPage
-							? 'bg-blue-600 text-white'
+							? 'bg-[#576F66] text-white'
 							: 'text-gray-500 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
 					}`}
 				>

@@ -35,22 +35,109 @@ export async function GET(request: NextRequest) {
     const orderFields = order.fields;
 
     // Récupérer les articles de la commande
-    const orderItemsResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems?filterByFormula={Commande ID}='${order.id}'`, {
+    const orderItemsResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems?filterByFormula={Commande ID}='${orderFields['Numero de commande']}'`, {
       headers: { 'Authorization': `Bearer ${API_KEY}` }
     });
+
+    // Fonction pour récupérer les détails de base d'un produit
+    const getProductDetails = async (productId: string | string[]) => {
+      try {
+        // Extraire l'ID du tableau si c'est un tableau
+        const actualProductId = Array.isArray(productId) ? productId[0] : productId;
+        
+        // Si c'est un ID Airtable (commence par 'rec'), chercher directement par ID
+        if (actualProductId && actualProductId.startsWith('rec')) {
+          const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits/${actualProductId}`, {
+            headers: { 'Authorization': `Bearer ${API_KEY}` }
+          });
+          
+          if (productResponse.ok) {
+            const productData = await productResponse.json();
+            const product = productData.fields;
+            if (product) {
+              // Parser les images si c'est une chaîne séparée par des points-virgules
+              let imageUrl = null;
+              if (product['Images']) {
+                if (typeof product['Images'] === 'string') {
+                  const images = product['Images'].split(';').map(url => url.trim()).filter(url => url.length > 0);
+                  imageUrl = images[0] || null;
+                } else if (Array.isArray(product['Images'])) {
+                  imageUrl = product['Images'][0] || null;
+                }
+              }
+              
+              return {
+                brand: product['Marque'] || 'Marque inconnue',
+                model: product['Modèle'] || actualProductId,
+                image: imageUrl,
+                price: product['Prix'] ? parseFloat(product['Prix'].match(/(\d+\.?\d*)/)?.[1] || '0') : 0
+              };
+            }
+          }
+        } else {
+          // Sinon, chercher par modèle (ancienne méthode)
+          const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits?filterByFormula={Modèle}='${actualProductId}'`, {
+            headers: { 'Authorization': `Bearer ${API_KEY}` }
+          });
+          
+          if (productResponse.ok) {
+            const productData = await productResponse.json();
+            const product = productData.records[0]?.fields;
+            if (product) {
+              // Parser les images si c'est une chaîne séparée par des points-virgules
+              let imageUrl = null;
+              if (product['Images']) {
+                if (typeof product['Images'] === 'string') {
+                  const images = product['Images'].split(';').map(url => url.trim()).filter(url => url.length > 0);
+                  imageUrl = images[0] || null;
+                } else if (Array.isArray(product['Images'])) {
+                  imageUrl = product['Images'][0] || null;
+                }
+              }
+              
+              return {
+                brand: product['Marque'] || 'Marque inconnue',
+                model: product['Modèle'] || actualProductId,
+                image: imageUrl,
+                price: product['Prix'] ? parseFloat(product['Prix'].match(/(\d+\.?\d*)/)?.[1] || '0') : 0
+              };
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erreur récupération produit:', error);
+      }
+      return null;
+    };
 
     let orderItems = [];
     if (orderItemsResponse.ok) {
       const itemsData = await orderItemsResponse.json();
-      orderItems = itemsData.records.map((item: any) => ({
-        id: item.id,
-        productId: item.fields['Produit ID']?.[0] || '',
-        quantity: item.fields['Quantite'] || 0,
-        size: item.fields['Taille'] || null,
-        unitPrice: item.fields['Prix unitaire'] || 0,
-        totalPrice: item.fields['Prix total'] || 0,
-        status: item.fields['Statut'] || 'En stock'
-      }));
+      
+      // Récupérer les détails de tous les produits en parallèle
+      const itemsWithDetails = await Promise.all(
+        itemsData.records.map(async (item: any) => {
+          const productDetails = await getProductDetails(item.fields['Produit ID']);
+          
+          return {
+            id: item.id,
+            productId: item.fields['Produit ID'],
+            productName: item.fields['Nom du produit'] || 'Produit inconnu',
+            quantity: item.fields['Quantite'] || 0,
+            size: item.fields['Taille'] || null,
+            unitPrice: item.fields['Prix unitaire'] || 0,
+            totalPrice: item.fields['Prix total'] || 0,
+            status: item.fields['Statut'] || 'En stock',
+            // Informations de base du produit
+            brand: productDetails?.brand || 'Marque inconnue',
+            model: productDetails?.model || item.fields['Produit ID'],
+            image: productDetails?.image || item.fields['Image'] || null,
+            currentPrice: productDetails?.price || item.fields['Prix unitaire'] || 0
+          };
+        })
+      );
+      
+      orderItems = itemsWithDetails;
     }
 
     // Récupérer les informations du client
@@ -175,9 +262,9 @@ export async function GET(request: NextRequest) {
       paymentMethod: orderFields['Methode de paiement'] || '',
       subtotal: orderFields['Sous-total'] || 0,
       shippingCost: orderFields['Frais de livraison'] || 0,
-      discount: orderFields['Reduction appliquee'] || 0,
-      total: orderFields['Total final'] || 0,
-      promoCode: orderFields['Code promotionnel'] || '',
+      discount: orderFields['Reduction'] || 0,
+      total: orderFields['Total'] || 0,
+      promoCode: orderFields['Code promo'] || '',
       items: orderItems,
       client: clientInfo,
       trackingSteps

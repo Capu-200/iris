@@ -44,17 +44,24 @@ export async function POST(request: NextRequest) {
 
     // Calcul de la réduction
     let discount = 0;
+    let type = promoCode['Type'] || 'fixed';
+    
     if (promoCode['Type'] === 'Pourcentage') {
       discount = (subtotal * promoCode['Valeur']) / 100;
     } else if (promoCode['Type'] === 'Montant fixe') {
       discount = promoCode['Valeur'];
-    } else if (promoCode['Type'] === 'Livraison gratuite') {
-      return NextResponse.json({ discount: 0, type: 'shipping' });
+    } else if (promoCode['Type'] === 'Livraison gratuite' || promoCode['Type'] === 'Livraison') {
+      // Pour les codes de livraison gratuite, on retourne un type spécial
+      return NextResponse.json({ 
+        discount: 0, 
+        type: 'shipping',
+        description: promoCode['Description'] || 'Livraison gratuite'
+      });
     }
 
     return NextResponse.json({ 
       discount: Math.min(discount, subtotal),
-      type: promoCode['Type'],
+      type: type,
       description: promoCode['Description'] || ''
     });
 
