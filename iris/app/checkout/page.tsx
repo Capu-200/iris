@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useCart } from '../lib/cart';
+import { useAuth } from '../lib/auth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createOrder, createOrGetClient, calculateShippingCost, applyPromoCode } from '../lib/api/client-orders';
@@ -17,6 +18,7 @@ interface PromoCode {
 
 export default function CheckoutPage() {
 	const { state, totalItems, totalPrice, clear } = useCart();
+	const { user, isLoading: authLoading } = useAuth();
 	const router = useRouter();
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [currentStep, setCurrentStep] = useState(1);
@@ -81,6 +83,26 @@ export default function CheckoutPage() {
 		const cost = calculateShippingCost(formData.country, totalPrice);
 		setShippingCost(cost);
 	}, [formData.country, totalPrice]);
+
+	// Rediriger si pas connecté
+	useEffect(() => {
+		if (!authLoading && !user) {
+			router.push('/login?redirect=/checkout');
+		}
+	}, [user, authLoading, router]);
+
+	// Pré-remplir les informations utilisateur
+	useEffect(() => {
+		if (user) {
+			setFormData(prev => ({
+				...prev,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+				phone: user.phone || '',
+			}));
+		}
+	}, [user]);
 
 	// Fonctions de validation
 	const validateEmail = (email: string): boolean => {

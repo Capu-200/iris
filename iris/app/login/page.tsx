@@ -1,7 +1,57 @@
+'use client';
+
 import Image from "next/image";
-import Logo from '@/public/Logo-vert.svg'
+import Logo from '@/public/Logo-vert.svg';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../lib/auth';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Login() {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const { login } = useAuth();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get('redirect') || '/account';
+
+    // Vérifier que le contexte d'authentification est bien chargé
+    useEffect(() => {
+        console.log('🔍 Page de login chargée');
+        console.log('🔍 Fonction login disponible:', typeof login);
+    }, [login]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log(' Bouton cliqué, début de la soumission');
+        console.log('🔍 Email:', email);
+        console.log(' Password:', password);
+        
+        setIsLoading(true);
+        setError('');
+
+        try {
+            console.log('🔍 Appel de la fonction login...');
+            const result = await login(email, password);
+            console.log('🔍 Résultat de la connexion:', result);
+            
+            if (result.success) {
+                console.log('✅ Connexion réussie, redirection vers:', redirectTo);
+                router.push(redirectTo);
+            } else {
+                console.log('❌ Échec de la connexion:', result.error);
+                setError(result.error || 'Erreur de connexion');
+            }
+        } catch (err) {
+            console.error('❌ Erreur lors de la connexion:', err);
+            setError('Erreur de connexion');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
       <div className="h-full bg-gray-50">
         <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
@@ -15,7 +65,13 @@ export default function Login() {
           </div>
   
           <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-            <form action="#" method="POST" className="space-y-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm/6 font-medium text-gray-950">
                   Adresse mail
@@ -27,6 +83,8 @@ export default function Login() {
                     type="email"
                     required
                     autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="block w-full rounded-md bg-gray-100 px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-black/10 placeholder:text-gray-950 focus:outline-2 focus:-outline-offset-2 focus:outline-[#576F66] sm:text-sm/6"
                   />
                 </div>
@@ -50,6 +108,8 @@ export default function Login() {
                     type="password"
                     required
                     autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="block w-full rounded-md bg-gray-100 px-3 py-1.5 text-base text-gray-950 outline-1 -outline-offset-1 outline-black/10 placeholder:text-gray-950 focus:outline-2 focus:-outline-offset-2 focus:outline-[#576F66] sm:text-sm/6"
                   />
                 </div>
@@ -58,22 +118,23 @@ export default function Login() {
               <div>
                 <button
                   type="submit"
-                  className="flex w-full justify-center rounded-md bg-[#576F66] px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-[#34433D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#576F66]"
+                  disabled={isLoading}
+                  className="flex w-full justify-center rounded-md bg-[#576F66] px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-[#34433D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#576F66] disabled:opacity-50"
                 >
-                  Se connecter
+                  {isLoading ? 'Connexion...' : 'Se connecter'}
                 </button>
               </div>
             </form>
   
             <p className="mt-10 text-center text-sm/6 text-gray-400">
               Vous n'avez pas de compte ?{' '}
-              <a href="/register" className="font-semibold text-[#576F66] hover:text-[#34433D]">
+              <Link href="/register" className="font-semibold text-[#576F66] hover:text-[#34433D]">
                 Créez vous en un !
-              </a>
+              </Link>
             </p>
           </div>
         </div>
       </div>
     )
-  }
+}
   

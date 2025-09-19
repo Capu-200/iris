@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { CartProvider } from "./lib/cart";
+import { AuthProvider } from "./lib/auth";
 import HeaderCopy from "./components/HeaderCopy";
 
 import * as React from "react";
@@ -34,12 +35,12 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen`}
 			>
-				{/* <Providers> */}
+				<AuthProvider>
 					<CartProvider>
 						<HeaderCopy />
 						{children}
 					</CartProvider>
-				{/* </Providers> */}
+				</AuthProvider>
 			</body>
 		</html>
 	);
