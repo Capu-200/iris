@@ -47,7 +47,7 @@ function parseSizes(sizesString?: string): number[] {
   }
   return sizesString
     .split(';')
-    .map(size => parseInt(size.trim()))
+    .map(size => parseFloat(size.trim()))
     .filter(size => !isNaN(size))
     .sort((a, b) => a - b);
 }

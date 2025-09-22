@@ -53,13 +53,6 @@ export default function HeaderCopy() {
                                     {user.firstName}
                                 </span>
                             </Link>
-                            <Link
-                                href="/"
-                                onClick={logout}
-                                className="text-sm/4 ml-4 mr-2 font-semibold text-orange-500 hover:text-orange-600 transition"
-                            >
-                                Se déconnecter
-                            </Link>
                         </div>
                     ) : (
                         <Link href="/login" className="text-sm/6 font-semibold text-gray-900">

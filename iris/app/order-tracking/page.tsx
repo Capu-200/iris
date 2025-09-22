@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '../lib/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface OrderItem {
@@ -58,16 +58,48 @@ interface OrderTrackingInfo {
 export default function OrderTrackingPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [orderNumber, setOrderNumber] = useState('');
+  const searchParams = useSearchParams();
   const [trackingInfo, setTrackingInfo] = useState<OrderTrackingInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Récupérer le numéro de commande depuis l'URL
+  const orderNumber = searchParams.get('orderNumber');
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login?redirect=/order-tracking');
     }
   }, [user, authLoading, router]);
+
+  // Charger automatiquement les informations de la commande si le numéro est fourni
+  useEffect(() => {
+    if (orderNumber && user) {
+      loadTrackingInfo(orderNumber);
+    }
+  }, [orderNumber, user]);
+
+  const loadTrackingInfo = async (orderNum: string) => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(orderNum)}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la recherche');
+      }
+
+      const data = await response.json();
+      setTrackingInfo(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      setTrackingInfo(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -83,31 +115,6 @@ export default function OrderTrackingPage() {
   if (!user) {
     return null;
   }
-
-  const handleTrackOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderNumber.trim()) return;
-
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(orderNumber)}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la recherche');
-      }
-
-      const data = await response.json();
-      setTrackingInfo(data);
-    } catch (err: any) {
-      setError(err.message);
-      setTrackingInfo(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -168,32 +175,6 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        {/* Formulaire de recherche */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
-          <form onSubmit={handleTrackOrder} className="max-w-md mx-auto">
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Numéro de commande
-              </label>
-              <input
-                type="text"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="Ex: CMD-ABC123XYZ"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-black text-white dark:bg-white dark:text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Recherche...' : 'Suivre ma commande'}
-            </button>
-          </form>
-        </div>
-
         {/* Message d'erreur */}
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-8">
@@ -206,27 +187,99 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
+        {/* Chargement */}
+        {isLoading && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#576F66] mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Chargement des informations de la commande...</p>
+            </div>
+          </div>
+        )}
+
         {/* Informations de suivi */}
         {trackingInfo && (
           <div className="space-y-8">
-            {/* Statut actuel */}
+            {/* Timeline des étapes - EN HAUT */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Commande #{trackingInfo.orderNumber}
-                </h2>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-2xl">{getStatusIcon(trackingInfo.status)}</span>
-                  <p className={`text-lg font-medium ${getStatusColor(trackingInfo.status)}`}>
-                    {trackingInfo.status}
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Suivi de votre commande
+                </h3>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Commande #{trackingInfo.orderNumber}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Passée le {new Date(trackingInfo.orderDate).toLocaleDateString('fr-FR')}
                   </p>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Commande passée le {new Date(trackingInfo.orderDate).toLocaleDateString('fr-FR')}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Livraison prévue le {new Date(trackingInfo.estimatedDelivery).toLocaleDateString('fr-FR')}
-                </p>
+              </div>
+              
+              {/* Date de livraison prévue - MISE EN ÉVIDENCE */}
+              {trackingInfo.estimatedDelivery && (
+                <div className="mb-8 p-4 bg-gradient-to-r from-[#576F66] to-[#34433D] rounded-lg text-white">
+                  <div className="flex items-center">
+                    <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold text-lg">Livraison prévue</p>
+                      <p className="text-sm opacity-90">
+                        {new Date(trackingInfo.estimatedDelivery).toLocaleDateString('fr-FR', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="relative">
+                {/* Ligne de progression */}
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+                
+                <div className="space-y-8">
+                  {(trackingInfo.trackingSteps || []).map((step, index) => (
+                    <div key={index} className="relative flex items-start">
+                      {/* Cercle de statut */}
+                      <div className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        step.completed 
+                          ? "bg-[#576F66] text-white" 
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      }`}>
+                        {step.completed ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <span className="text-sm font-medium">{index + 1}</span>
+                        )}
+                      </div>
+                      
+                      {/* Contenu de l'étape */}
+                      <div className="ml-6 flex-1">
+                        <h4 className={`text-lg font-medium ${
+                          step.completed 
+                            ? "text-gray-900 dark:text-white" 
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}>
+                          {step.name}
+                        </h4>
+                        {step.date && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {new Date(step.date).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric"
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -235,11 +288,11 @@ export default function OrderTrackingPage() {
               {/* Articles commandés */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Articles commandés ({trackingInfo.items.length})
+                  Articles commandés ({trackingInfo.items?.length || 0})
                 </h3>
-                {trackingInfo.items.length > 0 ? (
+                {trackingInfo.items?.length > 0 ? (
                   <div className="space-y-4">
-                    {trackingInfo.items.map((item, index) => (
+                    {trackingInfo.items?.map((item, index) => (
                       <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
                           {item.image ? (
@@ -261,16 +314,10 @@ export default function OrderTrackingPage() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                           {item.brand} • Taille {item.size || 'N/A'} • Quantité {item.quantity}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Statut: {item.status}
-                          </p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-gray-900 dark:text-white">
                             {item.totalPrice.toFixed(2)} €
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {item.unitPrice.toFixed(2)} € × {item.quantity}
                           </p>
                         </div>
                       </div>
@@ -293,9 +340,9 @@ export default function OrderTrackingPage() {
                     Adresse de livraison
                   </h3>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <p className="font-medium">{trackingInfo.shippingAddress.street}</p>
-                    <p>{trackingInfo.shippingAddress.postalCode} {trackingInfo.shippingAddress.city}</p>
-                    <p className="font-medium">{trackingInfo.shippingAddress.country}</p>
+                    <p className="font-medium">{trackingInfo.shippingAddress?.street || "N/A"}</p>
+                    <p>{trackingInfo.shippingAddress?.postalCode || ""} {trackingInfo.shippingAddress?.city || ""}</p>
+                    <p className="font-medium">{trackingInfo.shippingAddress?.country || ""}</p>
                   </div>
                 </div>
 
@@ -357,52 +404,6 @@ export default function OrderTrackingPage() {
               </div>
             </div>
 
-            {/* Timeline des étapes */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                Historique de votre commande
-              </h3>
-              <div className="space-y-6">
-                {trackingInfo.trackingSteps.map((step, index) => (
-                  <div key={index} className="flex items-start">
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      step.completed 
-                        ? 'bg-green-100 dark:bg-green-900/20' 
-                        : 'bg-gray-100 dark:bg-gray-700'
-                    }`}>
-                      {step.completed ? (
-                        <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <span className={`text-sm font-medium ${
-                          step.completed 
-                            ? 'text-green-600 dark:text-green-400' 
-                            : 'text-gray-400 dark:text-gray-500'
-                        }`}>
-                          {index + 1}
-                        </span>
-                      )}
-                    </div>
-                    <div className="ml-4 flex-1">
-                      <h4 className={`font-medium ${
-                        step.completed 
-                          ? 'text-gray-900 dark:text-white' 
-                          : 'text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {step.name}
-                      </h4>
-                      {step.date && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {new Date(step.date).toLocaleDateString('fr-FR')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Informations de contact */}
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6">
               <div className="flex items-start">
@@ -422,6 +423,29 @@ export default function OrderTrackingPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Si pas de numéro de commande dans l'URL */}
+        {!orderNumber && !isLoading && !trackingInfo && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div className="text-center">
+              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Aucune commande sélectionnée
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Veuillez sélectionner une commande depuis votre compte pour voir son suivi.
+              </p>
+              <Link 
+                href="/account"
+                className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors"
+              >
+                Retour à mon compte
+              </Link>
             </div>
           </div>
         )}

@@ -42,24 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
 		try {
-			console.log('🔍 Début de la connexion pour:', email);
 			const response = await fetch('/api/auth/login', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, password })
 			});
 
-			console.log('🔍 Statut de la réponse:', response.status);
 			const data = await response.json();
-			console.log(' Données reçues:', data);
 
 			if (data.success) {
-				console.log('✅ Connexion réussie, sauvegarde de l\'utilisateur');
 				setUser(data.user);
 				localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
 				return { success: true };
 			} else {
-				console.log('❌ Échec de la connexion:', data.error);
 				return { success: false, error: data.error || 'Erreur de connexion' };
 			}
 		} catch (error) {

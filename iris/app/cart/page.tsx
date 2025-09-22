@@ -56,7 +56,7 @@ export default function CartPage() {
 								Votre panier est vide
 							</h2>
 							<p className="text-gray-600 dark:text-gray-400 mb-8">
-								Découvrez notre collection de sneakers premium
+								Découvrez notre collection de sneakers éco-responsables
 							</p>
 							<Link 
 								href="/products"

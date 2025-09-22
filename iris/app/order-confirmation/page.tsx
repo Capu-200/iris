@@ -73,7 +73,7 @@ export default function OrderConfirmationPage() {
 							</div>
 							<h3 className="font-semibold text-gray-900 dark:text-white mb-2">Livraison</h3>
 							<p className="text-sm text-gray-600 dark:text-gray-400">
-								Livraison prévue sous 2-3 jours ouvrés
+								Livraison prévue sous 2-5 jours ouvrés
 							</p>
 						</div>
 					</div>

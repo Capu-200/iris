@@ -23,8 +23,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Configuration manquante" }, { status: 500 });
     }
 
+    console.log('🔍 Données de commande reçues:', JSON.stringify(orderData, null, 2));
+
     // Calculs
-    const subtotal = orderData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const subtotal = orderData.items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0);
     
     // Code promotionnel
     let discount = 0;
@@ -51,6 +53,8 @@ export async function POST(request: NextRequest) {
     const total = Math.round((subtotal + shippingCost - discount) * 100) / 100;
     const orderNumber = `CMD-${Date.now().toString(36).toUpperCase()}`;
 
+    console.log('📊 Calculs:', { subtotal, shippingCost, discount, total, orderNumber });
+
     // Construire l'adresse complète
     const fullAddress = `${orderData.shippingAddress.street}, ${orderData.shippingAddress.postalCode} ${orderData.shippingAddress.city}`;
 
@@ -72,6 +76,8 @@ export async function POST(request: NextRequest) {
       }
     };
 
+    console.log('📝 Création commande:', JSON.stringify(orderRecord, null, 2));
+
     const response = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes`, {
       method: 'POST',
       headers: {
@@ -83,22 +89,27 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Erreur création commande:', response.status, errorText);
+      console.error('❌ Erreur création commande:', response.status, errorText);
       return NextResponse.json({ error: `Erreur création commande: ${response.status}` }, { status: response.status });
     }
 
     const result = await response.json();
-    const orderId = result.id;
+    const orderId = result.id; // ID de l'enregistrement Airtable
+    console.log('✅ Commande créée:', orderId);
 
     // Créer les articles de commande seulement s'il y en a
-    if (orderData.items.length > 0) {
+    if (orderData.items && orderData.items.length > 0) {
+      console.log(`🛍️ Création de ${orderData.items.length} articles...`);
+      
       for (const item of orderData.items) {
-        // Structure adaptée avec le numéro de commande
+        console.log('📦 Création article:', item);
+        
+        // Structure correcte pour les champs de liaison
         const orderItemRecord = {
           fields: {
-            'Commande ID': orderNumber, // Utiliser le numéro de commande au lieu de l'ID interne
-            'Produit ID': [item.productId], // Référence vers le produit (ID Airtable)
-            'Nom du produit': item.title, // Nom du produit pour l'affichage
+            'Commande ID': [orderId], // CORRECTION: Utiliser l'ID de l'enregistrement, pas le numéro
+            'Produit ID': [item.productId], // Lien vers la table Produits
+            'Nom du produit': item.title,
             'Quantite': item.quantity,
             'Taille': item.size || null,
             'Prix unitaire': item.price,
@@ -106,6 +117,8 @@ export async function POST(request: NextRequest) {
             'Image': item.image || null
           }
         };
+
+        console.log('📝 Article record:', JSON.stringify(orderItemRecord, null, 2));
 
         const itemResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems`, {
           method: 'POST',
@@ -119,28 +132,50 @@ export async function POST(request: NextRequest) {
         if (!itemResponse.ok) {
           const errorText = await itemResponse.text();
           console.error('❌ Erreur création article:', itemResponse.status, errorText);
+        } else {
+          const itemResult = await itemResponse.json();
+          console.log('✅ Article créé:', itemResult.id);
         }
       }
+    } else {
+      console.log('⚠️ Aucun article à créer');
     }
 
     // Mettre à jour le nombre de commandes du client
     try {
-      const clientUpdateResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${orderData.clientId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fields: {
-            'Nombre de commandes': { $increment: 1 },
-            'Total commandes': { $increment: total }
-          }
-        })
+      // Récupérer d'abord les données actuelles du client
+      const clientGetResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${orderData.clientId}`, {
+        headers: { 'Authorization': `Bearer ${API_KEY}` }
       });
 
-      if (!clientUpdateResponse.ok) {
-        console.error('Erreur mise à jour client:', clientUpdateResponse.status);
+      if (clientGetResponse.ok) {
+        const clientData = await clientGetResponse.json();
+        const currentOrderCount = clientData.fields['Nombre de commandes'] || 0;
+        const currentTotal = clientData.fields['Total commandes'] || 0;
+
+        // Mettre à jour avec les nouvelles valeurs
+        const clientUpdateResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${orderData.clientId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fields: {
+              'Nombre de commandes': currentOrderCount + 1,
+              'Total commandes': currentTotal + total
+            }
+          })
+        });
+
+        if (!clientUpdateResponse.ok) {
+          const errorText = await clientUpdateResponse.text();
+          console.error('Erreur mise à jour client:', clientUpdateResponse.status, errorText);
+        } else {
+          console.log('✅ Client mis à jour avec succès');
+        }
+      } else {
+        console.error('Erreur récupération client pour mise à jour');
       }
     } catch (error) {
       console.error('Erreur mise à jour client:', error);

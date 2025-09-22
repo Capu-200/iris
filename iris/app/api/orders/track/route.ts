@@ -4,9 +4,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const orderNumber = searchParams.get('orderNumber');
-
+    
     if (!orderNumber) {
-      return NextResponse.json({ error: 'Numéro de commande requis' }, { status: 400 });
+      return NextResponse.json({ error: "Numéro de commande requis" }, { status: 400 });
     }
 
     const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID;
@@ -16,263 +16,243 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Configuration manquante" }, { status: 500 });
     }
 
-    // Récupérer la commande
+    // Récupérer la commande par son numéro
     const orderResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes?filterByFormula={Numero de commande}='${orderNumber}'`, {
       headers: { 'Authorization': `Bearer ${API_KEY}` }
     });
 
     if (!orderResponse.ok) {
-      return NextResponse.json({ error: `Erreur API: ${orderResponse.status}` }, { status: orderResponse.status });
+      return NextResponse.json({ error: "Erreur récupération commande" }, { status: 500 });
     }
 
     const orderData = await orderResponse.json();
     
     if (orderData.records.length === 0) {
-      return NextResponse.json({ error: 'Commande non trouvée' }, { status: 404 });
+      return NextResponse.json({ error: "Commande non trouvée" }, { status: 404 });
     }
 
     const order = orderData.records[0];
-    const orderFields = order.fields;
+    const orderId = order.id; // ID de l'enregistrement Airtable
 
-    // Récupérer les articles de la commande
-    const orderItemsResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems?filterByFormula={Commande ID}='${orderFields['Numero de commande']}'`, {
-      headers: { 'Authorization': `Bearer ${API_KEY}` }
-    });
+    console.log("🔍 Recherche OrderItems pour orderId:", orderId);
+    console.log("📦 Données de la commande:", order.fields);
 
-    // Fonction pour récupérer les détails de base d'un produit
-    const getProductDetails = async (productId: string | string[]) => {
-      try {
-        // Extraire l'ID du tableau si c'est un tableau
-        const actualProductId = Array.isArray(productId) ? productId[0] : productId;
-        
-        // Si c'est un ID Airtable (commence par 'rec'), chercher directement par ID
-        if (actualProductId && actualProductId.startsWith('rec')) {
-          const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits/${actualProductId}`, {
-            headers: { 'Authorization': `Bearer ${API_KEY}` }
-          });
-          
-          if (productResponse.ok) {
-            const productData = await productResponse.json();
-            const product = productData.fields;
-            if (product) {
-              // Parser les images si c'est une chaîne séparée par des points-virgules
-              let imageUrl = null;
-              if (product['Images']) {
-                if (typeof product['Images'] === 'string') {
-                  const images = product['Images'].split(';').map(url => url.trim()).filter(url => url.length > 0);
-                  imageUrl = images[0] || null;
-                } else if (Array.isArray(product['Images'])) {
-                  imageUrl = product['Images'][0] || null;
-                }
-              }
-              
-              return {
-                brand: product['Marque'] || 'Marque inconnue',
-                model: product['Modèle'] || actualProductId,
-                image: imageUrl,
-                price: product['Prix'] ? parseFloat(product['Prix'].match(/(\d+\.?\d*)/)?.[1] || '0') : 0
-              };
-            }
-          }
-        } else {
-          // Sinon, chercher par modèle (ancienne méthode)
-          const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits?filterByFormula={Modèle}='${actualProductId}'`, {
-            headers: { 'Authorization': `Bearer ${API_KEY}` }
-          });
-          
-          if (productResponse.ok) {
-            const productData = await productResponse.json();
-            const product = productData.records[0]?.fields;
-            if (product) {
-              // Parser les images si c'est une chaîne séparée par des points-virgules
-              let imageUrl = null;
-              if (product['Images']) {
-                if (typeof product['Images'] === 'string') {
-                  const images = product['Images'].split(';').map(url => url.trim()).filter(url => url.length > 0);
-                  imageUrl = images[0] || null;
-                } else if (Array.isArray(product['Images'])) {
-                  imageUrl = product['Images'][0] || null;
-                }
-              }
-              
-              return {
-                brand: product['Marque'] || 'Marque inconnue',
-                model: product['Modèle'] || actualProductId,
-                image: imageUrl,
-                price: product['Prix'] ? parseFloat(product['Prix'].match(/(\d+\.?\d*)/)?.[1] || '0') : 0
-              };
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Erreur récupération produit:', error);
-      }
-      return null;
-    };
-
-    let orderItems = [];
-    if (orderItemsResponse.ok) {
-      const itemsData = await orderItemsResponse.json();
+    let items = [];
+    
+    // Méthode 1: Essayer de récupérer via le champ OrderItems de la commande
+    if (order.fields.OrderItems && Array.isArray(order.fields.OrderItems) && order.fields.OrderItems.length > 0) {
+      console.log("📋 OrderItems trouvés dans la commande:", order.fields.OrderItems);
       
-      // Récupérer les détails de tous les produits en parallèle
-      const itemsWithDetails = await Promise.all(
-        itemsData.records.map(async (item: any) => {
-          const productDetails = await getProductDetails(item.fields['Produit ID']);
-          
-          return {
-            id: item.id,
-            productId: item.fields['Produit ID'],
-            productName: item.fields['Nom du produit'] || 'Produit inconnu',
-            quantity: item.fields['Quantite'] || 0,
-            size: item.fields['Taille'] || null,
-            unitPrice: item.fields['Prix unitaire'] || 0,
-            totalPrice: item.fields['Prix total'] || 0,
-            status: item.fields['Statut'] || 'En stock',
-            // Informations de base du produit
-            brand: productDetails?.brand || 'Marque inconnue',
-            model: productDetails?.model || item.fields['Produit ID'],
-            image: productDetails?.image || item.fields['Image'] || null,
-            currentPrice: productDetails?.price || item.fields['Prix unitaire'] || 0
-          };
+      items = await Promise.all(
+        order.fields.OrderItems.map(async (itemId: string) => {
+          try {
+            console.log("🔍 Récupération OrderItem:", itemId);
+            const itemResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems/${itemId}`, {
+              headers: { 'Authorization': `Bearer ${API_KEY}` }
+            });
+            
+            if (itemResponse.ok) {
+              const itemData = await itemResponse.json();
+              console.log("✅ OrderItem récupéré:", itemData.fields);
+              
+              // Récupérer les détails du produit
+              let productDetails = null;
+              const produitId = itemData.fields['Produit ID'];
+              console.log("🛍️ Produit ID:", produitId);
+              
+              if (produitId && Array.isArray(produitId) && produitId.length > 0) {
+                try {
+                  const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits/${produitId[0]}`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                  });
+                  
+                  if (productResponse.ok) {
+                    const productData = await productResponse.json();
+                    console.log("✅ Produit trouvé:", productData.fields.Nom);
+                    
+                    productDetails = {
+                      id: productData.id,
+                      name: productData.fields.Nom || '',
+                      brand: productData.fields.Marque || '',
+                      category: productData.fields.Categorie || '',
+                      price: productData.fields.Prix || 0,
+                      image: (() => {
+                        if (Array.isArray(productData.fields.Image)) {
+                          return productData.fields.Image[0]?.url || null;
+                        } else if (typeof productData.fields.Image === "string") {
+                          return productData.fields.Image;
+                        }
+                        return null;
+                      })(),
+                      description: productData.fields.Description || '',
+                      sizes: productData.fields.Tailles || []
+                    };
+                  }
+                } catch (error) {
+                  console.error('Erreur récupération produit:', error);
+                }
+              }
+
+              // Récupérer l'image de l'item
+              const itemImage = (() => {
+                if (productDetails?.image) {
+                  return productDetails.image;
+                }
+                
+                if (Array.isArray(itemData.fields.Image) && itemData.fields.Image.length > 0) {
+                  return itemData.fields.Image[0]?.url || null;
+                } else if (typeof itemData.fields.Image === "string" && itemData.fields.Image.trim() !== "") {
+                  return itemData.fields.Image;
+                }
+                
+                return null;
+              })();
+              
+              console.log("🖼️ Image finale:", itemImage);
+
+              return {
+                id: itemData.id,
+                productId: Array.isArray(produitId) ? produitId[0] : '',
+                productName: itemData.fields['Nom du produit'] || '',
+                brand: productDetails?.brand || '',
+                quantity: itemData.fields.Quantite || 0,
+                size: itemData.fields.Taille || null,
+                unitPrice: itemData.fields['Prix unitaire'] || 0,
+                totalPrice: itemData.fields['Prix total'] || 0,
+                image: itemImage,
+                status: 'En cours',
+                product: productDetails
+              };
+            } else {
+              console.error("❌ Erreur récupération OrderItem:", itemResponse.status);
+              return null;
+            }
+          } catch (error) {
+            console.error('Erreur récupération OrderItem:', error);
+            return null;
+          }
         })
       );
       
-      orderItems = itemsWithDetails;
+      // Filtrer les items null
+      items = items.filter(item => item !== null);
+    } else {
+      console.log("❌ Aucun OrderItems trouvé dans la commande");
     }
 
-    // Récupérer les informations du client
-    let clientInfo = null;
-    if (orderFields['Client ID']?.[0]) {
-      const clientResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${orderFields['Client ID'][0]}`, {
-        headers: { 'Authorization': `Bearer ${API_KEY}` }
-      });
+    console.log("📦 Items finaux:", items);
 
-      if (clientResponse.ok) {
-        const clientData = await clientResponse.json();
-        clientInfo = {
-          firstName: clientData.fields['Prenom'] || '',
-          lastName: clientData.fields['Nom'] || '',
-          email: clientData.fields['Email'] || ''
-        };
-      }
+    // Déterminer le statut de suivi et calculer la date de livraison prévue
+    const status = order.fields.Statut || 'En attente';
+    let trackingStatus = 'pending';
+    let trackingMessage = 'Votre commande est en cours de traitement';
+    let estimatedDelivery = null;
+
+    // Calculer la date de livraison prévue basée sur le statut
+    const orderDate = new Date(order.fields['Date de commande'] || new Date());
+    
+    switch (status) {
+      case 'En attente':
+        trackingStatus = 'pending';
+        trackingMessage = 'Votre commande est en cours de traitement';
+        // Livraison prévue dans 5-7 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'Confirmée':
+        trackingStatus = 'confirmed';
+        trackingMessage = 'Votre commande a été confirmée et est en préparation';
+        // Livraison prévue dans 4-6 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'En préparation':
+        trackingStatus = 'preparing';
+        trackingMessage = 'Votre commande est en préparation';
+        // Livraison prévue dans 2-4 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'Expédiée':
+        trackingStatus = 'shipped';
+        trackingMessage = 'Votre commande a été expédiée';
+        // Livraison prévue dans 1-3 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'Livrée':
+        trackingStatus = 'delivered';
+        trackingMessage = 'Votre commande a été livrée';
+        // Si livrée, utiliser la date de commande + 5 jours comme date de livraison
+        estimatedDelivery = new Date(orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'Annulée':
+        trackingStatus = 'cancelled';
+        trackingMessage = 'Votre commande a été annulée';
+        estimatedDelivery = null;
+        break;
+      default:
+        trackingStatus = 'unknown';
+        trackingMessage = 'Statut inconnu';
+        // Par défaut, livraison dans 5-7 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     }
 
-    // Déterminer les étapes de suivi basées sur le statut
-    const getTrackingSteps = (status: string, orderDate: string) => {
-      const steps = [
-        { name: 'Commande confirmée', completed: true, date: orderDate },
-        { name: 'En cours de préparation', completed: false, date: null },
-        { name: 'Expédiée', completed: false, date: null },
-        { name: 'En transit', completed: false, date: null },
-        { name: 'Livrée', completed: false, date: null }
-      ];
-
-      switch (status) {
-        case 'En attente':
-          steps[1].completed = false;
-          break;
-        case 'Confirmée':
-          steps[1].completed = true;
-          break;
-        case 'En préparation':
-          steps[1].completed = true;
-          steps[2].completed = false;
-          break;
-        case 'Expédiée':
-          steps[1].completed = true;
-          steps[2].completed = true;
-          steps[3].completed = true;
-          break;
-        case 'Livrée':
-          steps[1].completed = true;
-          steps[2].completed = true;
-          steps[3].completed = true;
-          steps[4].completed = true;
-          break;
-        case 'Annulée':
-          return steps.map(step => ({ ...step, completed: false }));
-      }
-
-      return steps;
+    // Construire l'adresse de livraison à partir des champs de la commande
+    const shippingAddress = {
+      street: order.fields['Adresse de livraison'] || '',
+      city: '',
+      postalCode: '',
+      country: order.fields['Pays de livraison'] || '',
+      full: `${order.fields['Adresse de livraison'] || ''}, ${order.fields['Pays de livraison'] || ''}`
     };
 
-    const trackingSteps = getTrackingSteps(orderFields['Statut'] || 'En attente', orderFields['Date de commande'] || '');
-
-    // Calculer la date de livraison estimée
-    const getEstimatedDelivery = (orderDate: string, country: string) => {
-      const orderDateObj = new Date(orderDate);
-      let deliveryDays = 3; // France par défaut
-      
-      switch (country) {
-        case 'Belgique':
-          deliveryDays = 4;
-          break;
-        case 'Suisse':
-          deliveryDays = 5;
-          break;
-        case 'Autre':
-          deliveryDays = 7;
-          break;
-      }
-
-      const deliveryDate = new Date(orderDateObj);
-      deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);
-      return deliveryDate.toISOString().split('T')[0];
-    };
-
-    // Parser l'adresse pour extraire les composants
-    const parseAddress = (address: string) => {
-      if (!address) return { street: '', city: '', postalCode: '' };
-      
-      // Format: "123 Rue de la Paix, 75001 Paris"
-      const parts = address.split(',');
-      if (parts.length >= 2) {
-        const street = parts[0].trim();
-        const cityPart = parts[1].trim();
-        const cityMatch = cityPart.match(/^(\d+)\s+(.+)$/);
-        
-        if (cityMatch) {
-          return {
-            street,
-            postalCode: cityMatch[1],
-            city: cityMatch[2]
-          };
-        }
-      }
-      
-      return { street: address, city: '', postalCode: '' };
-    };
-
-    const addressComponents = parseAddress(orderFields['Adresse de livraison'] || '');
-
-    const response = {
+    const orderDetails = {
       orderId: order.id,
-      orderNumber: orderFields['Numero de commande'] || '',
-      status: orderFields['Statut'] || 'En attente',
-      paymentStatus: orderFields['Statut de paiement'] || 'En attente',
-      orderDate: orderFields['Date de commande'] || '',
-      estimatedDelivery: getEstimatedDelivery(orderFields['Date de commande'] || '', orderFields['Pays de livraison'] || 'France'),
-      shippingAddress: {
-        street: addressComponents.street,
-        city: addressComponents.city,
-        postalCode: addressComponents.postalCode,
-        country: orderFields['Pays de livraison'] || '',
-        full: orderFields['Adresse de livraison'] || ''
-      },
-      paymentMethod: orderFields['Methode de paiement'] || '',
-      subtotal: orderFields['Sous-total'] || 0,
-      shippingCost: orderFields['Frais de livraison'] || 0,
-      discount: orderFields['Reduction'] || 0,
-      total: orderFields['Total'] || 0,
-      promoCode: orderFields['Code promo'] || '',
-      items: orderItems,
-      client: clientInfo,
-      trackingSteps
+      orderNumber: order.fields['Numero de commande'] || '',
+      status: status,
+      paymentStatus: 'Payé', // Par défaut
+      trackingStatus: trackingStatus,
+      trackingMessage: trackingMessage,
+      orderDate: order.fields['Date de commande'] || '',
+      estimatedDelivery: estimatedDelivery,
+      subtotal: order.fields['Sous-total'] || 0,
+      shippingCost: order.fields['Frais de livraison'] || 0,
+      discount: order.fields.Reduction || 0,
+      total: order.fields.Total || 0,
+      shippingAddress: shippingAddress,
+      paymentMethod: order.fields['Methode de paiement'] || '',
+      promoCode: order.fields['Code promo'] || '',
+      items: items,
+      trackingSteps: [
+        {
+          name: "Commande reçue",
+          completed: true,
+          date: order.fields["Date de commande"] || new Date().toISOString().split("T")[0]
+        },
+        {
+          name: "Commande confirmée",
+          completed: status === "Confirmée" || status === "En préparation" || status === "Expédiée" || status === "Livrée",
+          date: status === "Confirmée" || status === "En préparation" || status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        },
+        {
+          name: "En préparation",
+          completed: status === "En préparation" || status === "Expédiée" || status === "Livrée",
+          date: status === "En préparation" || status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        },
+        {
+          name: "Expédiée",
+          completed: status === "Expédiée" || status === "Livrée",
+          date: status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        },
+        {
+          name: "Livrée",
+          completed: status === "Livrée",
+          date: status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        }
+      ]
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(orderDetails);
 
   } catch (error) {
+    console.error('Erreur suivi commande:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

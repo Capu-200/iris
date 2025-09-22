@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getProductBySlug, searchProducts } from '../../lib/products';
+import { getProductBySlug, searchProducts, Product } from '../../lib/products';
 import AddToCart from './add-to-cart';
 
 // Fonction pour déterminer le statut de stock
@@ -18,7 +18,7 @@ function getStockStatus(stock: number): { text: string; color: string; bgColor: 
 }
 
 // Composant pour une carte de produit recommandé
-function RecommendedProductCard({ product }: { product: any }) {
+function RecommendedProductCard({ product }: { product: Product }) {
 	const stockStatus = getStockStatus(product.stock);
 	
 	return (
@@ -59,8 +59,9 @@ function RecommendedProductCard({ product }: { product: any }) {
 	);
 }
 
-export default async function ProductDetail({ params }: { params: { slug: string } }) {
-	const product = await getProductBySlug(params.slug);
+export default async function ProductDetail({ params }: { params: Promise<{ slug: string }> }) {
+	const { slug } = await params;
+	const product = await getProductBySlug(slug);
 	if (!product) return notFound();
 	
 	const stockStatus = getStockStatus(product.stock);

@@ -19,29 +19,20 @@ export default function Login() {
 
     // Vérifier que le contexte d'authentification est bien chargé
     useEffect(() => {
-        console.log('🔍 Page de login chargée');
-        console.log('🔍 Fonction login disponible:', typeof login);
     }, [login]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log(' Bouton cliqué, début de la soumission');
-        console.log('🔍 Email:', email);
-        console.log(' Password:', password);
         
         setIsLoading(true);
         setError('');
 
         try {
-            console.log('🔍 Appel de la fonction login...');
             const result = await login(email, password);
-            console.log('🔍 Résultat de la connexion:', result);
             
             if (result.success) {
-                console.log('✅ Connexion réussie, redirection vers:', redirectTo);
                 router.push(redirectTo);
             } else {
-                console.log('❌ Échec de la connexion:', result.error);
                 setError(result.error || 'Erreur de connexion');
             }
         } catch (err) {
