@@ -32,84 +32,115 @@ export async function GET(request: NextRequest) {
     }
 
     const order = orderData.records[0];
+    const orderId = order.id; // ID de l'enregistrement Airtable
 
-    // Récupérer les articles de la commande
-    const itemsResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems?filterByFormula={Commande ID}='${orderNumber}'`, {
-      headers: { 'Authorization': `Bearer ${API_KEY}` }
-    });
+    console.log("🔍 Recherche OrderItems pour orderId:", orderId);
+    console.log("📦 Données de la commande:", order.fields);
 
     let items = [];
-    if (itemsResponse.ok) {
-      const itemsData = await itemsResponse.json();
+    
+    // Méthode 1: Essayer de récupérer via le champ OrderItems de la commande
+    if (order.fields.OrderItems && Array.isArray(order.fields.OrderItems) && order.fields.OrderItems.length > 0) {
+      console.log("📋 OrderItems trouvés dans la commande:", order.fields.OrderItems);
       
       items = await Promise.all(
-        itemsData.records.map(async (item: any) => {
-          
-          // Récupérer les détails du produit
-          let productDetails = null;
-          if (item.fields['Produit ID'] && item.fields['Produit ID'].length > 0) {
-            try {
-              const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits/${item.fields['Produit ID'][0]}`, {
-                headers: { 'Authorization': `Bearer ${API_KEY}` }
-              });
+        order.fields.OrderItems.map(async (itemId: string) => {
+          try {
+            console.log("🔍 Récupération OrderItem:", itemId);
+            const itemResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems/${itemId}`, {
+              headers: { 'Authorization': `Bearer ${API_KEY}` }
+            });
+            
+            if (itemResponse.ok) {
+              const itemData = await itemResponse.json();
+              console.log("✅ OrderItem récupéré:", itemData.fields);
               
-              if (productResponse.ok) {
-                const productData = await productResponse.json();
-                
-                productDetails = {
-                  id: productData.id,
-                  name: productData.fields.Nom || '',
-                  brand: productData.fields.Marque || '',
-                  category: productData.fields.Categorie || '',
-                  price: productData.fields.Prix || 0,
-                  image: (() => {
-                    if (Array.isArray(productData.fields.Image)) {
-                      return productData.fields.Image[0]?.url || null;
-                    } else if (typeof productData.fields.Image === "string") {
-                      return productData.fields.Image;
-                    }
-                    return null;
-                  })(),
-                  description: productData.fields.Description || '',
-                  sizes: productData.fields.Tailles || []
-                };
+              // Récupérer les détails du produit
+              let productDetails = null;
+              const produitId = itemData.fields['Produit ID'];
+              console.log("🛍️ Produit ID:", produitId);
+              
+              if (produitId && Array.isArray(produitId) && produitId.length > 0) {
+                try {
+                  const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits/${produitId[0]}`, {
+                    headers: { 'Authorization': `Bearer ${API_KEY}` }
+                  });
+                  
+                  if (productResponse.ok) {
+                    const productData = await productResponse.json();
+                    console.log("✅ Produit trouvé:", productData.fields.Nom);
+                    
+                    productDetails = {
+                      id: productData.id,
+                      name: productData.fields.Nom || '',
+                      brand: productData.fields.Marque || '',
+                      category: productData.fields.Categorie || '',
+                      price: productData.fields.Prix || 0,
+                      image: (() => {
+                        if (Array.isArray(productData.fields.Image)) {
+                          return productData.fields.Image[0]?.url || null;
+                        } else if (typeof productData.fields.Image === "string") {
+                          return productData.fields.Image;
+                        }
+                        return null;
+                      })(),
+                      description: productData.fields.Description || '',
+                      sizes: productData.fields.Tailles || []
+                    };
+                  }
+                } catch (error) {
+                  console.error('Erreur récupération produit:', error);
+                }
               }
-            } catch (error) {
-              console.error('Erreur récupération produit:', error);
-            }
-          }
 
-          // Récupérer l'image de l'item
-          const itemImage = (() => {
-            
-            if (productDetails?.image) {
-              return productDetails.image;
+              // Récupérer l'image de l'item
+              const itemImage = (() => {
+                if (productDetails?.image) {
+                  return productDetails.image;
+                }
+                
+                if (Array.isArray(itemData.fields.Image) && itemData.fields.Image.length > 0) {
+                  return itemData.fields.Image[0]?.url || null;
+                } else if (typeof itemData.fields.Image === "string" && itemData.fields.Image.trim() !== "") {
+                  return itemData.fields.Image;
+                }
+                
+                return null;
+              })();
+              
+              console.log("🖼️ Image finale:", itemImage);
+
+              return {
+                id: itemData.id,
+                productId: Array.isArray(produitId) ? produitId[0] : '',
+                productName: itemData.fields['Nom du produit'] || '',
+                brand: productDetails?.brand || '',
+                quantity: itemData.fields.Quantite || 0,
+                size: itemData.fields.Taille || null,
+                unitPrice: itemData.fields['Prix unitaire'] || 0,
+                totalPrice: itemData.fields['Prix total'] || 0,
+                image: itemImage,
+                status: 'En cours',
+                product: productDetails
+              };
+            } else {
+              console.error("❌ Erreur récupération OrderItem:", itemResponse.status);
+              return null;
             }
-            
-            if (Array.isArray(item.fields.Image) && item.fields.Image.length > 0) {
-              return item.fields.Image[0]?.url || null;
-            } else if (typeof item.fields.Image === "string" && item.fields.Image.trim() !== "") {
-              return item.fields.Image;
-            }
-            
+          } catch (error) {
+            console.error('Erreur récupération OrderItem:', error);
             return null;
-          })();
-          
-
-          return {
-            id: item.id,
-            productId: item.fields['Produit ID']?.[0] || '',
-            name: item.fields['Nom du produit'] || '',
-            quantity: item.fields.Quantite || 0,
-            size: item.fields.Taille || null,
-            unitPrice: item.fields['Prix unitaire'] || 0,
-            totalPrice: item.fields['Prix total'] || 0,
-            image: itemImage,
-            product: productDetails
-          };
+          }
         })
       );
+      
+      // Filtrer les items null
+      items = items.filter(item => item !== null);
+    } else {
+      console.log("❌ Aucun OrderItems trouvé dans la commande");
     }
+
+    console.log("📦 Items finaux:", items);
 
     // Déterminer le statut de suivi
     const status = order.fields.Statut || 'En attente';
@@ -144,10 +175,20 @@ export async function GET(request: NextRequest) {
         trackingMessage = 'Statut inconnu';
     }
 
+    // Construire l'adresse de livraison à partir des champs de la commande
+    const shippingAddress = {
+      street: order.fields['Adresse de livraison'] || '',
+      city: '',
+      postalCode: '',
+      country: order.fields['Pays de livraison'] || '',
+      full: `${order.fields['Adresse de livraison'] || ''}, ${order.fields['Pays de livraison'] || ''}`
+    };
+
     const orderDetails = {
-      id: order.id,
+      orderId: order.id,
       orderNumber: order.fields['Numero de commande'] || '',
       status: status,
+      paymentStatus: 'Payé', // Par défaut
       trackingStatus: trackingStatus,
       trackingMessage: trackingMessage,
       orderDate: order.fields['Date de commande'] || '',
@@ -156,14 +197,40 @@ export async function GET(request: NextRequest) {
       shippingCost: order.fields['Frais de livraison'] || 0,
       discount: order.fields.Reduction || 0,
       total: order.fields.Total || 0,
-      shippingAddress: order.fields['Adresse de livraison'] || '',
-      country: order.fields['Pays de livraison'] || '',
+      shippingAddress: shippingAddress,
       paymentMethod: order.fields['Methode de paiement'] || '',
       promoCode: order.fields['Code promo'] || '',
-      items: items
+      items: items,
+      trackingSteps: [
+      {
+        name: "Commande reçue",
+        completed: true,
+        date: order.fields["Date de commande"] || new Date().toISOString().split("T")[0]
+      },
+      {
+        name: "Commande confirmée",
+        completed: status === "Confirmée" || status === "Expédiée" || status === "Livrée",
+        date: status === "Confirmée" || status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+      },
+      {
+        name: "En préparation",
+        completed: status === "Expédiée" || status === "Livrée",
+        date: status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+      },
+      {
+        name: "Expédiée",
+        completed: status === "Livrée",
+        date: status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+      },
+      {
+        name: "Livrée",
+        completed: status === "Livrée",
+        date: status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+      }
+    ]
     };
 
-    return NextResponse.json({ order: orderDetails });
+    return NextResponse.json(orderDetails);
 
   } catch (error) {
     console.error('Erreur suivi commande:', error);

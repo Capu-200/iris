@@ -16,57 +16,48 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Configuration manquante" }, { status: 500 });
     }
 
-    // D'abord, récupérer le client pour obtenir les IDs de commande
+    // Récupérer le client pour obtenir ses commandes
     const clientResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${clientId}`, {
       headers: { 'Authorization': `Bearer ${API_KEY}` }
     });
 
     if (!clientResponse.ok) {
-      console.error('Erreur récupération client:', clientResponse.status);
       return NextResponse.json({ error: "Client non trouvé" }, { status: 404 });
     }
 
     const clientData = await clientResponse.json();
     const orderIds = clientData.fields.Commandes || [];
-    
-    console.log('IDs de commande trouvés:', orderIds);
 
-    if (orderIds.length === 0) {
-      return NextResponse.json({ orders: [] });
-    }
+    console.log('Numéros de commande trouvés:', orderIds);
 
-    // Récupérer les détails de chaque commande directement par son ID
-    const ordersWithItems = await Promise.all(
-      orderIds.map(async (orderId: string) => {
-        try {
-          // Récupérer la commande directement par son ID
-          const orderResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes/${orderId}`, {
-            headers: { 'Authorization': `Bearer ${API_KEY}` }
-          });
+    // Récupérer les détails de chaque commande
+    const orders = [];
+    for (const orderId of orderIds) {
+      try {
+        const orderResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes/${orderId}`, {
+          headers: { 'Authorization': `Bearer ${API_KEY}` }
+        });
 
-          if (!orderResponse.ok) {
-            console.error(`Erreur récupération commande ${orderId}:`, orderResponse.status);
-            return null;
-          }
-
-          const order = await orderResponse.json();
-          const orderNumber = order.fields['Numero de commande'];
-
-          // Récupérer les articles de la commande
-          const itemsResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems?filterByFormula={Commande ID}='${orderNumber}'`, {
+        if (orderResponse.ok) {
+          const orderData = await orderResponse.json();
+          
+          // Récupérer les articles de cette commande
+          const itemsResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems?filterByFormula={Commande ID}='${orderId}'`, {
             headers: { 'Authorization': `Bearer ${API_KEY}` }
           });
 
           let items = [];
           if (itemsResponse.ok) {
             const itemsData = await itemsResponse.json();
+            
             items = await Promise.all(
-              itemsData.records.map(async (item: any) => {
+              itemsData.records.map(async (item: { id: string; fields: Record<string, unknown> }) => {
                 // Récupérer les détails du produit
                 let productDetails = null;
-                if (item.fields['Produit ID'] && item.fields['Produit ID'].length > 0) {
+                const produitId = item.fields['Produit ID'];
+                if (produitId && Array.isArray(produitId) && produitId.length > 0) {
                   try {
-                    const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits/${item.fields['Produit ID'][0]}`, {
+                    const productResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Produits/${produitId[0]}`, {
                       headers: { 'Authorization': `Bearer ${API_KEY}` }
                     });
                     
@@ -78,7 +69,14 @@ export async function GET(request: NextRequest) {
                         brand: productData.fields.Marque || '',
                         category: productData.fields.Categorie || '',
                         price: productData.fields.Prix || 0,
-                        image: productData.fields.Image?.[0]?.url || null,
+                        image: (() => {
+                          if (Array.isArray(productData.fields.Image)) {
+                            return productData.fields.Image[0]?.url || null;
+                          } else if (typeof productData.fields.Image === "string") {
+                            return productData.fields.Image;
+                          }
+                          return null;
+                        })(),
                         description: productData.fields.Description || '',
                         sizes: productData.fields.Tailles || []
                       };
@@ -90,49 +88,43 @@ export async function GET(request: NextRequest) {
 
                 return {
                   id: item.id,
-                  productId: item.fields['Produit ID']?.[0] || '',
+                  productId: Array.isArray(produitId) ? produitId[0] : '',
                   name: item.fields['Nom du produit'] || '',
                   quantity: item.fields.Quantite || 0,
                   size: item.fields.Taille || null,
                   unitPrice: item.fields['Prix unitaire'] || 0,
                   totalPrice: item.fields['Prix total'] || 0,
-                  image: item.fields.Image?.[0]?.url || null,
+                  image: item.fields.Image || null,
                   product: productDetails
                 };
               })
             );
           }
 
-          return {
-            id: order.id,
-            orderNumber: order.fields['Numero de commande'] || '',
-            status: order.fields.Statut || 'En attente',
-            orderDate: order.fields['Date de commande'] || '',
-            subtotal: order.fields['Sous-total'] || 0,
-            shippingCost: order.fields['Frais de livraison'] || 0,
-            discount: order.fields.Reduction || 0,
-            total: order.fields.Total || 0,
-            shippingAddress: order.fields['Adresse de livraison'] || '',
-            country: order.fields['Pays de livraison'] || '',
-            paymentMethod: order.fields['Methode de paiement'] || '',
-            promoCode: order.fields['Code promo'] || '',
-            items
-          };
-        } catch (error) {
-          console.error(`Erreur traitement commande ${orderId}:`, error);
-          return null;
+          orders.push({
+            id: orderData.id,
+            orderNumber: orderData.fields['Numero de commande'] || '',
+            status: orderData.fields.Statut || 'En attente',
+            orderDate: orderData.fields['Date de commande'] || '',
+            subtotal: orderData.fields['Sous-total'] || 0,
+            shippingCost: orderData.fields['Frais de livraison'] || 0,
+            discount: orderData.fields.Reduction || 0,
+            total: orderData.fields.Total || 0,
+            shippingAddress: orderData.fields['Adresse de livraison'] || '',
+            country: orderData.fields['Pays de livraison'] || '',
+            paymentMethod: orderData.fields['Methode de paiement'] || '',
+            promoCode: orderData.fields['Code promo'] || '',
+            items: items
+          });
         }
-      })
-    );
+      } catch (error) {
+        console.error('Erreur récupération commande:', error);
+      }
+    }
 
-    // Filtrer les commandes null et trier par date
-    const validOrders = ordersWithItems
-      .filter(order => order !== null)
-      .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+    console.log('Commandes valides trouvées:', orders.length);
 
-    console.log('Commandes valides trouvées:', validOrders.length);
-
-    return NextResponse.json({ orders: validOrders });
+    return NextResponse.json({ orders });
 
   } catch (error) {
     console.error('Erreur récupération commandes:', error);

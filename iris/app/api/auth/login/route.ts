@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
-    console.log('🔍 Tentative de connexion pour:', email);
     
     const BASE_ID = process.env.NEXT_PUBLIC_AIRTABLE_BASE_ID;
     const API_KEY = process.env.AIRTABLE_API_KEY;
@@ -15,13 +14,11 @@ export async function POST(request: NextRequest) {
 
     // Rechercher le client par email
     const url = `https://api.airtable.com/v0/${BASE_ID}/Clients?filterByFormula={Email}='${email}'`;
-    console.log('🔍 URL Airtable:', url);
     
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${API_KEY}` }
     });
 
-    console.log('🔍 Statut réponse Airtable:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -30,27 +27,22 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log(' Données reçues:', data);
 
     if (data.records.length === 0) {
-      console.log('❌ Aucun client trouvé pour cet email');
       return NextResponse.json({ success: false, error: "Email ou mot de passe incorrect" }, { status: 401 });
     }
 
     const client = data.records[0];
     const clientData = client.fields;
-    console.log('🔍 Client trouvé:', clientData);
 
     // Vérifier le mot de passe
     const storedPassword = clientData['Mot de passe'] || clientData['mot de passe'] || clientData['Password'];
     
     if (!storedPassword) {
-      console.log('❌ Aucun mot de passe stocké pour ce client');
       return NextResponse.json({ success: false, error: "Compte non configuré" }, { status: 401 });
     }
 
     if (storedPassword !== password) {
-      console.log('❌ Mot de passe incorrect');
       return NextResponse.json({ success: false, error: "Email ou mot de passe incorrect" }, { status: 401 });
     }
 
@@ -63,7 +55,6 @@ export async function POST(request: NextRequest) {
       phone: clientData['Telephone'] || clientData['Téléphone'] || ''
     };
 
-    console.log('✅ Connexion réussie pour:', user);
     return NextResponse.json({ success: true, user });
 
   } catch (error) {

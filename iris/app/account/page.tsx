@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '../lib/auth';
 
 interface ClientData {
@@ -361,9 +363,9 @@ export default function Account() {
                                 ) : orders.length === 0 ? (
                                     <div className="text-center py-8">
                                         <p className="text-gray-600 mb-4">Aucune commande trouvée.</p>
-                                        <a href="/products" className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors">
+                                        <Link href="/products" className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors">
                                             Découvrir nos produits
-                                        </a>
+                                        </Link>
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
@@ -389,9 +391,11 @@ export default function Account() {
                                                             {order.items.map((item) => (
                                                                 <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                                                                     {item.product?.image && (
-                                                                        <img 
+                                                                        <Image 
                                                                             src={item.product.image} 
                                                                             alt={item.name}
+                                                                            width={64}
+                                                                            height={64}
                                                                             className="w-16 h-16 object-cover rounded-md"
                                                                         />
                                                                     )}
@@ -455,13 +459,13 @@ export default function Account() {
                                                 
                                                 {/* Actions de commande */}
                                                 <div className="mt-4 flex flex-wrap gap-3">
-                                                    <a 
+                                                    <Link 
                                                         href={`/order-tracking?orderNumber=${order.orderNumber}`}
                                                         className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors"
                                                     >
                                                         <span className="i-hero-truck text-sm mr-2" aria-hidden />
                                                         Suivre la commande
-                                                    </a>
+                                                    </Link>
                                                     <button 
                                                         onClick={() => window.print()}
                                                         className="inline-flex items-center rounded-md border border-gray-300 text-gray-700 px-4 py-2 font-medium hover:bg-gray-50 transition-colors"
@@ -489,9 +493,9 @@ export default function Account() {
                                     <div className="text-center py-8">
                                         <p className="text-gray-600 mb-4">Aucune adresse de livraison trouvée.</p>
                                         <p className="text-sm text-gray-500">Les adresses apparaîtront ici après votre première commande.</p>
-                                        <a href="/products" className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors mt-4">
+                                        <Link href="/products" className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors mt-4">
                                             Passer une commande
-                                        </a>
+                                        </Link>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">

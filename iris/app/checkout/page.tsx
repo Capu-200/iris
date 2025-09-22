@@ -238,7 +238,7 @@ export default function CheckoutPage() {
 			}
 			
 			setPromoError('');
-		} catch (error: any) {
+		} catch (error: unknown) {
 			setPromoError(error.message);
 			setPromoDiscount(0);
 			setAppliedPromoType('');
@@ -297,7 +297,7 @@ export default function CheckoutPage() {
 			// 4. Vider le panier et rediriger
 			clear();
 			router.push(`/order-confirmation?orderId=${orderId}&orderNumber=${orderNumber}`);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			alert('Erreur lors de la création de la commande: ' + error.message);
 		} finally {
 			setIsProcessing(false);

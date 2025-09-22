@@ -101,8 +101,8 @@ export default function OrderTrackingPage() {
 
       const data = await response.json();
       setTrackingInfo(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
       setTrackingInfo(null);
     } finally {
       setIsLoading(false);
@@ -209,24 +209,70 @@ export default function OrderTrackingPage() {
         {/* Informations de suivi */}
         {trackingInfo && (
           <div className="space-y-8">
-            {/* Statut actuel */}
+            {/* Timeline des étapes - EN HAUT */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Commande #{trackingInfo.orderNumber}
-                </h2>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-2xl">{getStatusIcon(trackingInfo.status)}</span>
-                  <p className={`text-lg font-medium ${getStatusColor(trackingInfo.status)}`}>
-                    {trackingInfo.status}
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Suivi de votre commande
+                </h3>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Commande #{trackingInfo.orderNumber}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Passée le {new Date(trackingInfo.orderDate).toLocaleDateString('fr-FR')}
                   </p>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Commande passée le {new Date(trackingInfo.orderDate).toLocaleDateString('fr-FR')}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Livraison prévue le {new Date(trackingInfo.estimatedDelivery).toLocaleDateString('fr-FR')}
-                </p>
+              </div>
+              
+              <div className="relative">
+                {/* Ligne de progression */}
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+                
+                <div className="space-y-8">
+                  {(trackingInfo.trackingSteps || []).map((step, index) => (
+                    <div key={index} className="relative flex items-start">
+                      {/* Cercle de statut */}
+                      <div className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        step.completed 
+                          ? "bg-[#576F66] text-white" 
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      }`}>
+                        {step.completed ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <span className="text-sm font-medium">{index + 1}</span>
+                        )}
+                      </div>
+                      
+                      {/* Contenu de l'étape */}
+                      <div className="ml-6 flex-1">
+                        <h4 className={`text-lg font-medium ${
+                          step.completed 
+                            ? "text-gray-900 dark:text-white" 
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}>
+                          {step.name}
+                        </h4>
+                        {step.date && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {new Date(step.date).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric"
+                            })}
+                          </p>
+                        )}
+                        {/* Ajouter la prévision de livraison pour l'étape "Livrée" */}
+                        {step.name === "Livrée" && trackingInfo.estimatedDelivery && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-1 font-medium">
+                            Livraison prévue le {new Date(trackingInfo.estimatedDelivery).toLocaleDateString('fr-FR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -235,11 +281,11 @@ export default function OrderTrackingPage() {
               {/* Articles commandés */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Articles commandés ({trackingInfo.items.length})
+                  Articles commandés ({trackingInfo.items?.length || 0})
                 </h3>
-                {trackingInfo.items.length > 0 ? (
+                {trackingInfo.items?.length > 0 ? (
                   <div className="space-y-4">
-                    {trackingInfo.items.map((item, index) => (
+                    {trackingInfo.items?.map((item, index) => (
                       <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
                           {item.image ? (
@@ -261,16 +307,10 @@ export default function OrderTrackingPage() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                           {item.brand} • Taille {item.size || 'N/A'} • Quantité {item.quantity}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Statut: {item.status}
-                          </p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-gray-900 dark:text-white">
                             {item.totalPrice.toFixed(2)} €
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {item.unitPrice.toFixed(2)} € × {item.quantity}
                           </p>
                         </div>
                       </div>
@@ -293,9 +333,9 @@ export default function OrderTrackingPage() {
                     Adresse de livraison
                   </h3>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <p className="font-medium">{trackingInfo.shippingAddress.street}</p>
-                    <p>{trackingInfo.shippingAddress.postalCode} {trackingInfo.shippingAddress.city}</p>
-                    <p className="font-medium">{trackingInfo.shippingAddress.country}</p>
+                    <p className="font-medium">{trackingInfo.shippingAddress?.street || "N/A"}</p>
+                    <p>{trackingInfo.shippingAddress?.postalCode || ""} {trackingInfo.shippingAddress?.city || ""}</p>
+                    <p className="font-medium">{trackingInfo.shippingAddress?.country || ""}</p>
                   </div>
                 </div>
 
@@ -354,52 +394,6 @@ export default function OrderTrackingPage() {
                     <span className="text-gray-900 dark:text-white">{trackingInfo.total.toFixed(2)} €</span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Timeline des étapes */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                Historique de votre commande
-              </h3>
-              <div className="space-y-6">
-                {trackingInfo.trackingSteps.map((step, index) => (
-                  <div key={index} className="flex items-start">
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      step.completed 
-                        ? 'bg-green-100 dark:bg-green-900/20' 
-                        : 'bg-gray-100 dark:bg-gray-700'
-                    }`}>
-                      {step.completed ? (
-                        <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <span className={`text-sm font-medium ${
-                          step.completed 
-                            ? 'text-green-600 dark:text-green-400' 
-                            : 'text-gray-400 dark:text-gray-500'
-                        }`}>
-                          {index + 1}
-                        </span>
-                      )}
-                    </div>
-                    <div className="ml-4 flex-1">
-                      <h4 className={`font-medium ${
-                        step.completed 
-                          ? 'text-gray-900 dark:text-white' 
-                          : 'text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {step.name}
-                      </h4>
-                      {step.date && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {new Date(step.date).toLocaleDateString('fr-FR')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
 
