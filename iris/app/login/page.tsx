@@ -17,10 +17,6 @@ export default function Login() {
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirect') || '/account';
 
-    // Vérifier que le contexte d'authentification est bien chargé
-    useEffect(() => {
-    }, [login]);
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -28,12 +24,18 @@ export default function Login() {
         setError('');
 
         try {
-            const result = await login(email, password);
+            const success = await login(email, password);
             
-            if (result.success) {
-                router.push(redirectTo);
+            if (success) {
+                // Rediriger selon le rôle après connexion réussie
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user.role === 'admin') {
+                    router.push('/admin');
+                } else {
+                    router.push(redirectTo);
+                }
             } else {
-                setError(result.error || 'Erreur de connexion');
+                setError('Email ou mot de passe incorrect');
             }
         } catch (err) {
             console.error('❌ Erreur lors de la connexion:', err);
@@ -128,4 +130,3 @@ export default function Login() {
       </div>
     )
 }
-  

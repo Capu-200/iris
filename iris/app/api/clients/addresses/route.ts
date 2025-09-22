@@ -16,100 +16,86 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Configuration manquante" }, { status: 500 });
     }
 
-    // D'abord, récupérer le client pour obtenir les IDs de commande
+    // Si c'est un admin, retourner toutes les adresses de toutes les commandes
+    if (clientId === 'admin-demo' || clientId.includes('admin')) {
+      // Récupérer toutes les commandes pour les admins
+      const ordersResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes`, {
+        headers: { 'Authorization': `Bearer ${API_KEY}` }
+      });
+
+      if (!ordersResponse.ok) {
+        return NextResponse.json({ error: "Erreur récupération commandes" }, { status: 500 });
+      }
+
+      const ordersData = await ordersResponse.json();
+      
+      const addresses = ordersData.records.map((order: any) => ({
+        id: order.id,
+        orderNumber: order.fields['Numero de commande'] || '',
+        lastUsed: order.fields['Date de commande'] || '',
+        street: order.fields['Adresse de livraison'] || '',
+        city: '',
+        postalCode: '',
+        country: order.fields['Pays de livraison'] || '',
+        isDefault: false,
+        createdAt: order.fields['Date de commande'] || '',
+        type: 'livraison'
+      }));
+
+      return NextResponse.json({ addresses });
+    }
+
+    // Récupérer les commandes du client spécifique
     const clientResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Clients/${clientId}`, {
       headers: { 'Authorization': `Bearer ${API_KEY}` }
     });
 
     if (!clientResponse.ok) {
-      console.error('Erreur récupération client pour adresses:', clientResponse.status);
       return NextResponse.json({ error: "Client non trouvé" }, { status: 404 });
     }
 
     const clientData = await clientResponse.json();
-    const orderIds = clientData.fields.Commandes || [];
     
-    if (orderIds.length === 0) {
+    if (!clientData.fields.Commandes || !Array.isArray(clientData.fields.Commandes)) {
       return NextResponse.json({ addresses: [] });
     }
 
-    // Récupérer les commandes pour extraire les adresses
-    const addressMap = new Map();
-    
-    await Promise.all(
-      orderIds.map(async (orderId: string) => {
+    // Récupérer les détails des commandes
+    const addresses = await Promise.all(
+      clientData.fields.Commandes.map(async (orderId: string) => {
         try {
           const orderResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes/${orderId}`, {
             headers: { 'Authorization': `Bearer ${API_KEY}` }
           });
-
+          
           if (orderResponse.ok) {
-            const order = await orderResponse.json();
-            const address = order.fields['Adresse de livraison'];
-            const country = order.fields['Pays de livraison'];
-            const orderDate = order.fields['Date de commande'];
-            const orderNumber = order.fields['Numero de commande'];
-            
-            if (address && country) {
-              const addressKey = `${address}|${country}`;
-              if (!addressMap.has(addressKey)) {
-                addressMap.set(addressKey, {
-                  id: `addr_${order.id}`,
-                  type: 'livraison',
-                  street: address,
-                  city: '',
-                  postalCode: '',
-                  country: country,
-                  isDefault: false,
-                  createdAt: orderDate,
-                  orderNumber: orderNumber,
-                  lastUsed: orderDate
-                });
-              } else {
-                // Mettre à jour la date d'utilisation la plus récente
-                const existing = addressMap.get(addressKey);
-                if (new Date(orderDate) > new Date(existing.lastUsed)) {
-                  existing.lastUsed = orderDate;
-                  existing.orderNumber = orderNumber;
-                }
-              }
-            }
+            const orderData = await orderResponse.json();
+            return {
+              id: orderData.id,
+              orderNumber: orderData.fields['Numero de commande'] || '',
+              lastUsed: orderData.fields['Date de commande'] || '',
+              street: orderData.fields['Adresse de livraison'] || '',
+              city: '',
+              postalCode: '',
+              country: orderData.fields['Pays de livraison'] || '',
+              isDefault: false,
+              createdAt: orderData.fields['Date de commande'] || '',
+              type: 'livraison'
+            };
           }
         } catch (error) {
-          console.error(`Erreur traitement commande ${orderId} pour adresses:`, error);
+          console.error('Erreur récupération commande:', error);
+          return null;
         }
       })
     );
 
-    // Convertir en tableau et trier par date d'utilisation
-    const addresses = Array.from(addressMap.values()).sort((a, b) => 
-      new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()
-    );
+    const validAddresses = addresses.filter(addr => addr !== null);
 
-    return NextResponse.json({ addresses });
+    return NextResponse.json({ addresses: validAddresses });
 
   } catch (error) {
     console.error('Erreur récupération adresses:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const { clientId, type, street, city, postalCode, country, isDefault } = await request.json();
-    
-    if (!clientId || !street || !city || !postalCode || !country) {
-      return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
-    }
-
-    // Pour l'instant, on ne peut pas créer d'adresses car elles sont liées aux commandes
-    // Cette fonctionnalité pourrait être ajoutée plus tard si nécessaire
-    return NextResponse.json({ 
-      error: "La création d'adresses n'est pas encore implémentée. Les adresses sont automatiquement extraites de vos commandes." 
-    }, { status: 501 });
-
-  } catch (error) {
-    console.error('Erreur création adresse:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

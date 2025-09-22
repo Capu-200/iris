@@ -1,107 +1,102 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type User = {
-	id: string;
-	email: string;
-	firstName: string;
-	lastName: string;
-	phone?: string;
-};
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role?: string;
+}
 
-type AuthContextType = {
-	user: User | null;
-	login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-	register: (userData: { firstName: string; lastName: string; email: string; password: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
-	logout: () => void;
-	isLoading: boolean;
-};
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+}
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'iris_user';
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-	const [user, setUser] = useState<User | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    // Vérifier s'il y a un utilisateur en session
+    checkAuth();
+  }, []);
 
-	useEffect(() => {
-		// Charger l'utilisateur depuis le localStorage au démarrage
-		try {
-			const storedUser = localStorage.getItem(STORAGE_KEY);
-			if (storedUser) {
-				setUser(JSON.parse(storedUser));
-			}
-		} catch (error) {
-			console.error('Erreur lors du chargement de l\'utilisateur:', error);
-		} finally {
-			setIsLoading(false);
-		}
-	}, []);
+  const checkAuth = async () => {
+    try {
+      // Vérifier d'abord le localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+        setIsLoading(false);
+        return;
+      }
 
-	const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-		try {
-			const response = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password })
-			});
+      // Sinon, vérifier l'API
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Erreur vérification auth:', error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-			const data = await response.json();
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-			if (data.success) {
-				setUser(data.user);
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
-				return { success: true };
-			} else {
-				return { success: false, error: data.error || 'Erreur de connexion' };
-			}
-		} catch (error) {
-			console.error('❌ Erreur de connexion:', error);
-			return { success: false, error: 'Erreur de connexion' };
-		}
-	};
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        return true;
+      } else {
+        const errorData = await response.json();
+        console.error('Erreur login:', errorData.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Erreur login:', error);
+      return false;
+    }
+  };
 
-	const register = async (userData: { firstName: string; lastName: string; email: string; password: string; phone?: string }): Promise<{ success: boolean; error?: string }> => {
-		try {
-			const response = await fetch('/api/auth/register', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(userData)
-			});
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+  };
 
-			const data = await response.json();
-
-			if (data.success) {
-				setUser(data.user);
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
-				return { success: true };
-			} else {
-				return { success: false, error: data.error || 'Erreur d\'inscription' };
-			}
-		} catch (error) {
-			console.error('Erreur d\'inscription:', error);
-			return { success: false, error: 'Erreur d\'inscription' };
-		}
-	};
-
-	const logout = () => {
-		setUser(null);
-		localStorage.removeItem(STORAGE_KEY);
-	};
-
-	return (
-		<AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
-			{children}
-		</AuthContext.Provider>
-	);
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-	const context = useContext(AuthContext);
-	if (!context) {
-		throw new Error('useAuth must be used within AuthProvider');
-	}
-	return context;
-} 
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
