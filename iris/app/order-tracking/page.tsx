@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '../lib/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface OrderItem {
@@ -58,10 +58,13 @@ interface OrderTrackingInfo {
 export default function OrderTrackingPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [orderNumber, setOrderNumber] = useState('');
+  const searchParams = useSearchParams();
   const [trackingInfo, setTrackingInfo] = useState<OrderTrackingInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Récupérer le numéro de commande depuis l'URL
+  const orderNumber = searchParams.get('orderNumber');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -69,30 +72,19 @@ export default function OrderTrackingPage() {
     }
   }, [user, authLoading, router]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#576F66] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
+  // Charger automatiquement les informations de la commande si le numéro est fourni
+  useEffect(() => {
+    if (orderNumber && user) {
+      loadTrackingInfo(orderNumber);
+    }
+  }, [orderNumber, user]);
 
-  if (!user) {
-    return null;
-  }
-
-  const handleTrackOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderNumber.trim()) return;
-
+  const loadTrackingInfo = async (orderNum: string) => {
     setIsLoading(true);
     setError('');
     
     try {
-      const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(orderNumber)}`);
+      const response = await fetch(`/api/orders/track?orderNumber=${encodeURIComponent(orderNum)}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -108,6 +100,21 @@ export default function OrderTrackingPage() {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#576F66] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -168,32 +175,6 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        {/* Formulaire de recherche */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
-          <form onSubmit={handleTrackOrder} className="max-w-md mx-auto">
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Numéro de commande
-              </label>
-              <input
-                type="text"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="Ex: CMD-ABC123XYZ"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-[#576F66] focus:border-transparent"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-black text-white dark:bg-white dark:text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Recherche...' : 'Suivre ma commande'}
-            </button>
-          </form>
-        </div>
-
         {/* Message d'erreur */}
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-8">
@@ -202,6 +183,16 @@ export default function OrderTrackingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-red-800 dark:text-red-200 font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Chargement */}
+        {isLoading && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#576F66] mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Chargement des informations de la commande...</p>
             </div>
           </div>
         )}
@@ -222,6 +213,28 @@ export default function OrderTrackingPage() {
                   </p>
                 </div>
               </div>
+              
+              {/* Date de livraison prévue - MISE EN ÉVIDENCE */}
+              {trackingInfo.estimatedDelivery && (
+                <div className="mb-8 p-4 bg-gradient-to-r from-[#576F66] to-[#34433D] rounded-lg text-white">
+                  <div className="flex items-center">
+                    <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold text-lg">Livraison prévue</p>
+                      <p className="text-sm opacity-90">
+                        {new Date(trackingInfo.estimatedDelivery).toLocaleDateString('fr-FR', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="relative">
                 {/* Ligne de progression */}
@@ -261,12 +274,6 @@ export default function OrderTrackingPage() {
                               month: "long",
                               day: "numeric"
                             })}
-                          </p>
-                        )}
-                        {/* Ajouter la prévision de livraison pour l'étape "Livrée" */}
-                        {step.name === "Livrée" && trackingInfo.estimatedDelivery && (
-                          <p className="text-sm text-green-600 dark:text-green-400 mt-1 font-medium">
-                            Livraison prévue le {new Date(trackingInfo.estimatedDelivery).toLocaleDateString('fr-FR')}
                           </p>
                         )}
                       </div>
@@ -416,6 +423,29 @@ export default function OrderTrackingPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Si pas de numéro de commande dans l'URL */}
+        {!orderNumber && !isLoading && !trackingInfo && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div className="text-center">
+              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Aucune commande sélectionnée
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Veuillez sélectionner une commande depuis votre compte pour voir son suivi.
+              </p>
+              <Link 
+                href="/account"
+                className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors"
+              >
+                Retour à mon compte
+              </Link>
             </div>
           </div>
         )}

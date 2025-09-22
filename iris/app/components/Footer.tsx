@@ -36,7 +36,7 @@ export const Footer = () => {
                         <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase">Legal</h2>
                         <ul className="text-gray-500 font-medium">
                             <li className="mb-4">
-                                <a href="/confidentialite" className="hover:underline">Privacy Policy</a>
+                                <a href="/confidentialite" className="hover:underline">Politique de confidentialité</a>
                             </li>
                             <li>
                                 <a href="/cgv" className="hover:underline">Conditions Générales de ventes</a>

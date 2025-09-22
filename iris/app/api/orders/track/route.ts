@@ -142,37 +142,56 @@ export async function GET(request: NextRequest) {
 
     console.log("📦 Items finaux:", items);
 
-    // Déterminer le statut de suivi
+    // Déterminer le statut de suivi et calculer la date de livraison prévue
     const status = order.fields.Statut || 'En attente';
     let trackingStatus = 'pending';
     let trackingMessage = 'Votre commande est en cours de traitement';
     let estimatedDelivery = null;
 
+    // Calculer la date de livraison prévue basée sur le statut
+    const orderDate = new Date(order.fields['Date de commande'] || new Date());
+    
     switch (status) {
       case 'En attente':
         trackingStatus = 'pending';
         trackingMessage = 'Votre commande est en cours de traitement';
+        // Livraison prévue dans 5-7 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         break;
       case 'Confirmée':
         trackingStatus = 'confirmed';
         trackingMessage = 'Votre commande a été confirmée et est en préparation';
+        // Livraison prévue dans 4-6 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'En préparation':
+        trackingStatus = 'preparing';
+        trackingMessage = 'Votre commande est en préparation';
+        // Livraison prévue dans 2-4 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         break;
       case 'Expédiée':
         trackingStatus = 'shipped';
         trackingMessage = 'Votre commande a été expédiée';
-        estimatedDelivery = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // +3 jours
+        // Livraison prévue dans 1-3 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         break;
       case 'Livrée':
         trackingStatus = 'delivered';
         trackingMessage = 'Votre commande a été livrée';
+        // Si livrée, utiliser la date de commande + 5 jours comme date de livraison
+        estimatedDelivery = new Date(orderDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         break;
       case 'Annulée':
         trackingStatus = 'cancelled';
         trackingMessage = 'Votre commande a été annulée';
+        estimatedDelivery = null;
         break;
       default:
         trackingStatus = 'unknown';
         trackingMessage = 'Statut inconnu';
+        // Par défaut, livraison dans 5-7 jours
+        estimatedDelivery = new Date(orderDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     }
 
     // Construire l'adresse de livraison à partir des champs de la commande
@@ -202,32 +221,32 @@ export async function GET(request: NextRequest) {
       promoCode: order.fields['Code promo'] || '',
       items: items,
       trackingSteps: [
-      {
-        name: "Commande reçue",
-        completed: true,
-        date: order.fields["Date de commande"] || new Date().toISOString().split("T")[0]
-      },
-      {
-        name: "Commande confirmée",
-        completed: status === "Confirmée" || status === "Expédiée" || status === "Livrée",
-        date: status === "Confirmée" || status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
-      },
-      {
-        name: "En préparation",
-        completed: status === "Expédiée" || status === "Livrée",
-        date: status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
-      },
-      {
-        name: "Expédiée",
-        completed: status === "Livrée",
-        date: status === "Livrée" ? new Date().toISOString().split("T")[0] : null
-      },
-      {
-        name: "Livrée",
-        completed: status === "Livrée",
-        date: status === "Livrée" ? new Date().toISOString().split("T")[0] : null
-      }
-    ]
+        {
+          name: "Commande reçue",
+          completed: true,
+          date: order.fields["Date de commande"] || new Date().toISOString().split("T")[0]
+        },
+        {
+          name: "Commande confirmée",
+          completed: status === "Confirmée" || status === "En préparation" || status === "Expédiée" || status === "Livrée",
+          date: status === "Confirmée" || status === "En préparation" || status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        },
+        {
+          name: "En préparation",
+          completed: status === "En préparation" || status === "Expédiée" || status === "Livrée",
+          date: status === "En préparation" || status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        },
+        {
+          name: "Expédiée",
+          completed: status === "Expédiée" || status === "Livrée",
+          date: status === "Expédiée" || status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        },
+        {
+          name: "Livrée",
+          completed: status === "Livrée",
+          date: status === "Livrée" ? new Date().toISOString().split("T")[0] : null
+        }
+      ]
     };
 
     return NextResponse.json(orderDetails);
