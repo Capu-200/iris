@@ -4,7 +4,7 @@ import "./globals.css";
 
 import { CartProvider } from "./lib/cart";
 import { AuthProvider } from "./lib/auth";
-import HeaderCopy from "./components/HeaderCopy";
+import Header from "./components/Header";
 
 import * as React from "react";
 import {HeroUIProvider} from "@heroui/react";
@@ -37,7 +37,7 @@ export default function RootLayout({
 			>
 				<AuthProvider>
 					<CartProvider>
-						<HeaderCopy />
+						<Header />
 						{children}
 					</CartProvider>
 				</AuthProvider>

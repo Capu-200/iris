@@ -76,7 +76,8 @@ export default async function ProductsPage({
 						Collection Sneakers
 					</h1>
 					<p className="text-lg text-gray-600 dark:text-gray-300">
-						Découvrez notre sélection de sneakers premium
+						Découvrez notre collection de chaussures éco-responsables, 
+						conçues avec des matériaux durables et un design moderne.
 					</p>
 				</div>
 

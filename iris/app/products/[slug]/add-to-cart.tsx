@@ -11,8 +11,10 @@ export default function AddToCart({ product }: { product: Product }) {
 	const [isAdding, setIsAdding] = useState(false);
 	const [showSuccess, setShowSuccess] = useState(false);
 
+	const isOutOfStock = product.stock === 0;
+
 	const handleAddToCart = async () => {
-		if (!size || product.stock === 0) return;
+		if (!size || isOutOfStock) return;
 		
 		setIsAdding(true);
 		
@@ -32,6 +34,25 @@ export default function AddToCart({ product }: { product: Product }) {
 
 	return (
 		<div className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+			{/* Bannière de rupture de stock */}
+			{isOutOfStock && (
+				<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+					<div className="flex items-center">
+						<svg className="w-5 h-5 text-red-600 dark:text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+						</svg>
+						<div>
+							<h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+								Produit en rupture de stock
+							</h3>
+							<p className="text-sm text-red-600 dark:text-red-300 mt-1">
+								Ce produit n'est temporairement plus disponible. Contactez-nous pour être informé de sa réapprovisionnement.
+							</p>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Sélection de la taille */}
 			<div>
 				<label className="block text-base font-semibold text-gray-900 dark:text-white mb-3">
@@ -42,9 +63,12 @@ export default function AddToCart({ product }: { product: Product }) {
 						<button
 							key={s}
 							onClick={() => setSize(s)}
+							disabled={isOutOfStock}
 							className={`
 								relative px-4 py-3 rounded-lg border-2 font-medium transition-all duration-200
-								${size === s 
+								${isOutOfStock 
+									? 'border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+									: size === s 
 									? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black shadow-lg scale-105' 
 									: 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md'
 								}
@@ -65,22 +89,31 @@ export default function AddToCart({ product }: { product: Product }) {
 				<div className="flex items-center space-x-3">
 					<button
 						onClick={() => setQty(Math.max(1, qty - 1))}
-						className="w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center font-medium"
+						disabled={isOutOfStock}
+						className={`w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center font-medium ${
+							isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''
+						}`}
 						type="button"
 					>
 						−
 					</button>
 					<input 
-						className="w-20 h-10 border border-gray-300 dark:border-gray-600 rounded-lg px-3 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium" 
+						className={`w-20 h-10 border border-gray-300 dark:border-gray-600 rounded-lg px-3 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium ${
+							isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''
+						}`}
 						type="text" 
 						min={1} 
 						max={product.stock}
 						value={qty} 
+						disabled={isOutOfStock}
 						onChange={(e) => setQty(Math.max(1, Math.min(product.stock, Number(e.target.value))))} 
 					/>
 					<button
 						onClick={() => setQty(Math.min(product.stock, qty + 1))}
-						className="w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center font-medium"
+						disabled={isOutOfStock}
+						className={`w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center font-medium ${
+							isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''
+						}`}
 						type="button"
 					>
 						+
@@ -92,15 +125,15 @@ export default function AddToCart({ product }: { product: Product }) {
 			<div className="pt-4 relative">
 				<button
 					onClick={handleAddToCart}
-					disabled={!size || product.stock === 0 || isAdding}
+					disabled={!size || isOutOfStock || isAdding}
 					className={`
 						w-full px-6 py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg transform
 						${isAdding 
 							? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed scale-95' 
 							: showSuccess
 							? 'bg-green-600 hover:bg-green-700 text-white scale-105'
-							: product.stock === 0
-							? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
+							: isOutOfStock
+							? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed text-gray-500 dark:text-gray-400'
 							: 'bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100 hover:scale-[1.02]'
 						}
 						disabled:cursor-not-allowed
@@ -123,8 +156,13 @@ export default function AddToCart({ product }: { product: Product }) {
 								</svg>
 								<span>Ajouté au panier !</span>
 							</>
-						) : product.stock === 0 ? (
-							'Rupture de stock'
+						) : isOutOfStock ? (
+							<>
+								<svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+								</svg>
+								<span>Rupture de stock</span>
+							</>
 						) : (
 							<>
 								<svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

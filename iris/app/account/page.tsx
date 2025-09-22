@@ -219,10 +219,41 @@ export default function Account() {
     return(
         <div className="min-h-screen bg-gray-50 py-20 text-gray-950">
             <div className="max-w-5xl mx-auto px-4">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-semibold">Mon compte</h1>
-                    <p className="text-gray-600 mt-1">Gérez vos informations personnelles et vos commandes</p>
+                <div className="mb-6 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-semibold">Mon compte</h1>
+                        <p className="text-gray-600 mt-1">Gérez vos informations personnelles et vos commandes</p>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <span className="text-sm text-gray-600">
+                            Connecté en tant que {user.firstName} {user.lastName}
+                        </span>
+                        <button
+                            onClick={logout}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                            Se déconnecter
+                        </button>
+                    </div>
                 </div>
+
+                {/* Lien Admin pour les administrateurs */}
+                {user.role === 'admin' && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-[#576F66] to-[#34433D] rounded-lg text-white">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold">Dashboard Administrateur</h2>
+                                <p className="text-sm opacity-90">Gérez les commandes et les marques</p>
+                            </div>
+                            <Link 
+                                href="/admin"
+                                className="inline-flex items-center px-4 py-2 bg-white text-[#576F66] rounded-md font-medium hover:bg-gray-100 transition-colors"
+                            >
+                                Accéder au dashboard
+                            </Link>
+                        </div>
+                    </div>
+                )}
 
                 {error && (
                     <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
@@ -341,13 +372,6 @@ export default function Account() {
                                             className="inline-flex items-center rounded-md bg-[#576F66] text-white px-4 py-2 font-medium hover:bg-[#34433D] transition-colors disabled:opacity-50"
                                         >
                                             {loading ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            onClick={logout}
-                                            className="inline-flex items-center rounded-md border border-gray-300 text-gray-700 px-4 py-2 font-medium hover:bg-gray-50 transition-colors"
-                                        >
-                                            Se déconnecter
                                         </button>
                                     </div>
                                 </form>

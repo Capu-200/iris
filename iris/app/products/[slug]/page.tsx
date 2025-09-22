@@ -20,18 +20,36 @@ function getStockStatus(stock: number): { text: string; color: string; bgColor: 
 // Composant pour une carte de produit recommandé
 function RecommendedProductCard({ product }: { product: Product }) {
 	const stockStatus = getStockStatus(product.stock);
+	const isOutOfStock = product.stock === 0;
 	
 	return (
 		<Link href={`/products/${product.slug}`} className="group">
-			<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+			<div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+				isOutOfStock ? 'opacity-75' : ''
+			}`}>
 				{/* Image du produit */}
 				<div className="relative aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden">
 					<Image 
 						src={product.images[0] || '/placeholder.png'} 
 						alt={product.title} 
 						fill 
-						className="object-cover group-hover:scale-105 transition-transform duration-300" 
+						className={`object-cover transition-transform duration-300 ${
+							isOutOfStock ? 'grayscale' : 'group-hover:scale-105'
+						}`}
 					/>
+					
+					{/* Overlay pour les produits en rupture de stock */}
+					{isOutOfStock && (
+						<div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+							<div className="text-center text-white">
+								<svg className="w-8 h-8 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+								</svg>
+								<p className="text-sm font-bold">Rupture</p>
+							</div>
+						</div>
+					)}
+					
 					{/* Badge de statut */}
 					<div className="absolute top-2 right-2">
 						<span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color} ${stockStatus.bgColor}`}>
@@ -65,6 +83,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
 	if (!product) return notFound();
 	
 	const stockStatus = getStockStatus(product.stock);
+	const isOutOfStock = product.stock === 0;
 	
 	// Récupérer les produits recommandés (même marque ou même origine)
 	const recommendedProducts = await searchProducts({
@@ -108,11 +127,35 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
 								src={product.images[0] || '/placeholder.png'} 
 								alt={product.title} 
 								fill 
-								className="object-cover hover:scale-105 transition-transform duration-500" 
+								className={`object-cover transition-transform duration-500 ${
+									isOutOfStock ? 'grayscale' : 'hover:scale-105'
+								}`}
 							/>
+							
+							{/* Overlay pour les produits en rupture de stock */}
+							{isOutOfStock && (
+								<div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+									<div className="text-center text-white">
+										<svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+										</svg>
+										<h3 className="text-2xl font-bold mb-2">Rupture de stock</h3>
+										<p className="text-lg opacity-90">Produit temporairement indisponible</p>
+									</div>
+								</div>
+							)}
+							
+							{/* Badge de statut de stock */}
+							<div className="absolute top-4 left-4">
+								<span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${stockStatus.color} ${stockStatus.bgColor}`}>
+									{stockStatus.text}
+								</span>
+							</div>
+							
+							{/* Badge de stock limité */}
 							{product.stock <= 45 && product.stock > 0 && (
-								<div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-								Limité❕
+								<div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+									Stock limité
 								</div>
 							)}
 						</div>
@@ -121,12 +164,16 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
 						{product.images.length > 1 && (
 							<div className="grid grid-cols-3 gap-3">
 								{product.images.slice(1).map((image, index) => (
-									<div key={index} className="relative aspect-square bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer">
+									<div key={index} className={`relative aspect-square bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer ${
+										isOutOfStock ? 'grayscale' : ''
+									}`}>
 										<Image 
 											src={image} 
 											alt={`${product.title} ${index + 2}`} 
 											fill 
-											className="object-cover hover:scale-110 transition-transform duration-300" 
+											className={`object-cover transition-transform duration-300 ${
+												isOutOfStock ? '' : 'hover:scale-110'
+											}`}
 										/>
 									</div>
 								))}
@@ -156,6 +203,13 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
 								<span className="text-3xl font-bold text-gray-900 dark:text-white">{product.price.toFixed(2)} €</span>
 								<span className="text-sm text-gray-500 dark:text-gray-400">TTC</span>
 							</div>
+							
+							{/* Informations de stock */}
+							{!isOutOfStock && (
+								<div className="text-sm text-gray-600 dark:text-gray-400">
+									{product.stock} articles disponibles
+								</div>
+							)}
 						</div>
 
 						{/* Introduction */}
