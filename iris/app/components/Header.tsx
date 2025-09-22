@@ -47,19 +47,21 @@ export default function HeaderCopy() {
 
                     {user ? (
                         <div className="flex items-center space-x-4">
-                            <Link href="/account" className="flex items-center space-x-2">
-                                <UserCircleIcon className="h-5 w-5 text-purple-600" />
-                                <span className="text-sm/6 font-semibold text-gray-900">
-                                    {user.firstName}
-                                </span>
-                            </Link>
-                            {user.role === 'admin' && (
-                                <Link href="/admin" className="flex items-center space-x-2 text-sm/6 font-semibold text-[#576F66] hover:text-[#34433D]">
-                                    <Cog6ToothIcon className="h-5 w-5" />
-                                    Dashboard
+                         {user.role === 'client' && (
+                                <Link href="/account" className="flex items-center space-x-2">
+                                    <UserCircleIcon className="h-5 w-5 text-purple-600" />
+                                    <span className="text-sm/6 font-semibold text-gray-900">
+                                        {user.firstName}
+                                    </span>
                                 </Link>
                             )}
-                        </div>
+                                {user.role === 'admin' && (
+                                    <Link href="/admin" className="flex items-center space-x-2 text-sm/6 font-semibold text-[#576F66] hover:text-[#34433D]">
+                                        <Cog6ToothIcon className="h-5 w-5" />
+                                        Dashboard
+                                    </Link>
+                                )}
+                            </div>
                     ) : (
                         <Link href="/login" className="text-sm/6 font-semibold text-gray-900">
                             Se connecter
@@ -101,12 +103,14 @@ export default function HeaderCopy() {
 							<div className="py-6">
 								{user ? (
 									<>
+                                    {user.role === 'client' && (
 										<Link href="/account" className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-900">
 											<div className="flex items-center space-x-2">
 												<UserCircleIcon className="h-5 w-5 text-purple-600" />
 												<span>{user.firstName}</span>
 											</div>
 										</Link>
+                                        )}
 										{user.role === 'admin' && (
 											<Link href="/admin" className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-[#576F66] hover:bg-gray-50">
 												<div className="flex items-center space-x-2">

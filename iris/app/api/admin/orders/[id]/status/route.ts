@@ -21,6 +21,67 @@ export async function PATCH(
 
     console.log(`🔄 Mise à jour du statut de la commande ${id} vers: ${status}`);
 
+    // Si la commande est confirmée, déduire le stock des produits
+    if (status === 'Confirmée') {
+      console.log('📦 Commande confirmée - déduction du stock...');
+      
+      try {
+        // Récupérer les articles de la commande
+        const orderResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes/${id}`, {
+          headers: { 'Authorization': `Bearer ${API_KEY}` }
+        });
+
+        if (orderResponse.ok) {
+          const orderData = await orderResponse.json();
+          const orderItems = orderData.fields.OrderItems || [];
+
+          console.log(`🛍️ Récupération de ${orderItems.length} articles de la commande`);
+
+          // Pour chaque article, déduire le stock
+          for (const itemId of orderItems) {
+            try {
+              // Récupérer les détails de l'article
+              const itemResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/OrderItems/${itemId}`, {
+                headers: { 'Authorization': `Bearer ${API_KEY}` }
+              });
+
+              if (itemResponse.ok) {
+                const itemData = await itemResponse.json();
+                const productId = itemData.fields['Produit ID']?.[0];
+                const quantity = itemData.fields['Quantite'] || 0;
+
+                if (productId && quantity > 0) {
+                  console.log(`📦 Déduction du stock: Produit ${productId}, Quantité ${quantity}`);
+                  
+                  // Appeler l'API de mise à jour du stock
+                  const stockUpdateResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products/${productId}/stock`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      quantity: quantity,
+                      operation: 'subtract'
+                    })
+                  });
+
+                  if (stockUpdateResponse.ok) {
+                    const stockResult = await stockUpdateResponse.json();
+                    console.log(`✅ Stock mis à jour pour le produit ${productId}:`, stockResult);
+                  } else {
+                    console.error(`❌ Erreur mise à jour stock pour le produit ${productId}`);
+                  }
+                }
+              }
+            } catch (itemError) {
+              console.error(`❌ Erreur récupération article ${itemId}:`, itemError);
+            }
+          }
+        }
+      } catch (stockError) {
+        console.error('❌ Erreur lors de la déduction du stock:', stockError);
+        // Ne pas faire échouer la mise à jour du statut si la déduction du stock échoue
+      }
+    }
+
     // Mettre à jour le statut de la commande
     const updateResponse = await fetch(`https://api.airtable.com/v0/${BASE_ID}/Commandes/${id}`, {
       method: "PATCH",
