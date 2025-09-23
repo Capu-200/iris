@@ -58,7 +58,7 @@ export default function HeaderCopy() {
                                 {user.role === 'admin' && (
                                     <Link href="/admin" className="flex items-center space-x-2 text-sm/6 font-semibold text-[#576F66] hover:text-[#34433D]">
                                         <Cog6ToothIcon className="h-5 w-5" />
-                                        Dashboard
+                                         Dashboard
                                     </Link>
                                 )}
                             </div>

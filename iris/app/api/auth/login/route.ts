@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const user = {
       id: client.id,
       email: client.fields.Email || '',
-      firstName: client.fields.Prénom || '',
+      firstName: client.fields.Prenom || '',
       lastName: client.fields.Nom || '',
       role: client.fields.Role || 'client'
     };
