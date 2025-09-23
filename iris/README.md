@@ -216,18 +216,6 @@ Rendez-vous sur [http://localhost:3000](http://localhost:3000)
 - **Images** : Support de multiples CDNs (Unsplash, Cloudinary, etc.)
 - **Paiements** : Structure prête pour intégration Stripe/PayPal
 
-## 🚀 Déploiement
-
-### Vercel (Recommandé)
-1. Connecter le repository GitHub
-2. Configurer les variables d'environnement
-3. Déployer automatiquement
-
-### Autres Plateformes
-- **Netlify** : Compatible avec Next.js
-- **Railway** : Déploiement simple
-- **Docker** : Containerisation possible
-
 ## 🧪 Tests et Qualité
 
 ### Linting
